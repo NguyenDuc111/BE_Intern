@@ -10,40 +10,28 @@
 DROP TABLE IF EXISTS `Cart`;
 CREATE TABLE `Cart` (
   `CartID` int NOT NULL AUTO_INCREMENT,
-  `CustomerID` int NOT NULL,
+  `UserID` int NOT NULL,
   `ProductID` int NOT NULL,
   `Quantity` int NOT NULL,
   `AddedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`CartID`),
-  KEY `CustomerID` (`CustomerID`),
-  KEY `ProductID` (`ProductID`),
-  CONSTRAINT `Cart_ibfk_1` FOREIGN KEY (`CustomerID`) REFERENCES `Customers` (`CustomerID`) ON DELETE CASCADE,
+  KEY `idx_user_id` (`UserID`),
+  KEY `idx_product_id` (`ProductID`),
+  CONSTRAINT `Cart_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`) ON DELETE CASCADE,
   CONSTRAINT `Cart_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Categories`;
 CREATE TABLE `Categories` (
   `CategoryID` int NOT NULL AUTO_INCREMENT,
   `CategoryName` varchar(100) NOT NULL,
   `Description` text,
+  `ImageURL` varchar(255) DEFAULT NULL,
   `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`CategoryID`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-DROP TABLE IF EXISTS `Customers`;
-CREATE TABLE `Customers` (
-  `CustomerID` int NOT NULL AUTO_INCREMENT,
-  `FullName` varchar(100) NOT NULL,
-  `Email` varchar(100) NOT NULL,
-  `Password` varchar(255) NOT NULL,
-  `Phone` varchar(20) DEFAULT NULL,
-  `Address` text,
-  `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`CustomerID`),
-  UNIQUE KEY `Email` (`Email`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`CategoryID`),
+  KEY `idx_category_name` (`CategoryName`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `OrderDetails`;
 CREATE TABLE `OrderDetails` (
@@ -51,28 +39,27 @@ CREATE TABLE `OrderDetails` (
   `OrderID` int NOT NULL,
   `ProductID` int NOT NULL,
   `Quantity` int NOT NULL,
-  `UnitPrice` decimal(10,2) NOT NULL,
+  `Price` decimal(10,2) NOT NULL,
   PRIMARY KEY (`OrderDetailID`),
-  KEY `OrderID` (`OrderID`),
-  KEY `ProductID` (`ProductID`),
+  KEY `idx_order_id` (`OrderID`),
+  KEY `idx_product_id` (`ProductID`),
   CONSTRAINT `OrderDetails_ibfk_1` FOREIGN KEY (`OrderID`) REFERENCES `Orders` (`OrderID`) ON DELETE CASCADE,
-  CONSTRAINT `OrderDetails_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  CONSTRAINT `OrderDetails_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Orders`;
 CREATE TABLE `Orders` (
   `OrderID` int NOT NULL AUTO_INCREMENT,
-  `CustomerID` int NOT NULL,
-  `OrderDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UserID` int NOT NULL,
   `TotalAmount` decimal(10,2) NOT NULL,
-  `Status` enum('Pending','Processing','Shipped','Delivered','Cancelled') DEFAULT 'Pending',
-  `ShippingAddress` text NOT NULL,
+  `Status` enum('pending','completed','cancelled') DEFAULT 'pending',
   `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`OrderID`),
-  KEY `CustomerID` (`CustomerID`),
-  CONSTRAINT `Orders_ibfk_1` FOREIGN KEY (`CustomerID`) REFERENCES `Customers` (`CustomerID`) ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `idx_user_id` (`UserID`),
+  KEY `idx_status` (`Status`),
+  CONSTRAINT `Orders_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Products`;
 CREATE TABLE `Products` (
@@ -86,53 +73,84 @@ CREATE TABLE `Products` (
   `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`ProductID`),
-  KEY `CategoryID` (`CategoryID`),
+  KEY `idx_product_name` (`ProductName`),
+  KEY `idx_category_id` (`CategoryID`),
   CONSTRAINT `Products_ibfk_1` FOREIGN KEY (`CategoryID`) REFERENCES `Categories` (`CategoryID`) ON DELETE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-DROP TABLE IF EXISTS `Promotions`;
-CREATE TABLE `Promotions` (
-  `PromotionID` int NOT NULL AUTO_INCREMENT,
-  `PromotionCode` varchar(50) NOT NULL,
+DROP TABLE IF EXISTS `ResetTokens`;
+CREATE TABLE `ResetTokens` (
+  `TokenID` int NOT NULL AUTO_INCREMENT,
+  `UserID` int NOT NULL,
+  `Token` varchar(255) NOT NULL,
+  `ExpiresAt` timestamp NOT NULL,
+  `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`TokenID`),
+  KEY `idx_token` (`Token`),
+  KEY `idx_user_id` (`UserID`),
+  CONSTRAINT `ResetTokens_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+DROP TABLE IF EXISTS `Roles`;
+CREATE TABLE `Roles` (
+  `RoleID` int NOT NULL AUTO_INCREMENT,
+  `RoleName` varchar(50) NOT NULL,
   `Description` text,
-  `DiscountPercent` decimal(5,2) NOT NULL,
-  `StartDate` date NOT NULL,
-  `EndDate` date NOT NULL,
   `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`PromotionID`),
-  UNIQUE KEY `PromotionCode` (`PromotionCode`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  PRIMARY KEY (`RoleID`),
+  UNIQUE KEY `RoleName` (`RoleName`),
+  KEY `idx_role_name` (`RoleName`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-DROP TABLE IF EXISTS `Reviews`;
-CREATE TABLE `Reviews` (
-  `ReviewID` int NOT NULL AUTO_INCREMENT,
-  `ProductID` int NOT NULL,
-  `CustomerID` int NOT NULL,
-  `Rating` int NOT NULL,
-  `Comment` text,
+DROP TABLE IF EXISTS `Users`;
+CREATE TABLE `Users` (
+  `UserID` int NOT NULL AUTO_INCREMENT,
+  `RoleID` int NOT NULL,
+  `FullName` varchar(100) NOT NULL,
+  `Email` varchar(100) NOT NULL,
+  `Password` varchar(255) NOT NULL,
+  `Phone` varchar(20) DEFAULT NULL,
+  `Address` text,
   `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`ReviewID`),
-  KEY `ProductID` (`ProductID`),
-  KEY `CustomerID` (`CustomerID`),
-  CONSTRAINT `Reviews_ibfk_1` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE CASCADE,
-  CONSTRAINT `Reviews_ibfk_2` FOREIGN KEY (`CustomerID`) REFERENCES `Customers` (`CustomerID`) ON DELETE CASCADE,
-  CONSTRAINT `Reviews_chk_1` CHECK (((`Rating` >= 1) and (`Rating` <= 5)))
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`UserID`),
+  UNIQUE KEY `Email` (`Email`),
+  KEY `idx_email` (`Email`),
+  KEY `idx_role_id` (`RoleID`),
+  CONSTRAINT `Users_ibfk_1` FOREIGN KEY (`RoleID`) REFERENCES `Roles` (`RoleID`) ON DELETE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-
-INSERT INTO `Categories` (`CategoryID`, `CategoryName`, `Description`, `CreatedAt`, `UpdatedAt`) VALUES
-(1, 'Tương ớt', 'Các loại tương ớt Cholimex', '2025-04-21 08:48:01', '2025-04-21 08:48:01'),
-(2, 'Nước chấm', 'Nước mắm, nước tương Cholimex', '2025-04-21 08:48:01', '2025-04-21 08:48:01');
-INSERT INTO `Customers` (`CustomerID`, `FullName`, `Email`, `Password`, `Phone`, `Address`, `CreatedAt`, `UpdatedAt`) VALUES
-(1, 'Nguyen Van B', 'test@example.com', '$2a$10$SvY.gWea82PE7xHRo37zbu3TAMv/FX4nCzQnzVm/p.dAyX03LW0pW', '123456789', 'HCM', '2025-04-22 03:25:06', '2025-04-22 03:25:06'),
-(2, 'Nguyen Van A', 'hau@test.com', '$2a$10$Aueg6akS62pAeZuG8O6NXuLvJ3VITbulUlZ89l/GcgQVp3XSCOYdS', '123456789', 'HCM', '2025-04-22 03:39:48', '2025-04-22 03:44:04');
-
-
+INSERT INTO `Cart` (`CartID`, `UserID`, `ProductID`, `Quantity`, `AddedAt`) VALUES
+(1, 1, 1, 2, '2025-04-22 07:50:18'),
+(2, 1, 3, 1, '2025-04-22 07:50:18');
+INSERT INTO `Categories` (`CategoryID`, `CategoryName`, `Description`, `ImageURL`, `CreatedAt`, `UpdatedAt`) VALUES
+(1, 'Tương ớt', 'Các loại tương ớt Cholimex, phù hợp cho nhiều món ăn', '/images/tuong-ot-category.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(2, 'Nước mắm', 'Nước mắm nguyên chất và cao cấp từ Cholimex', '/images/nuoc-mam-category.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(3, 'Gia vị', 'Gia vị và hạt nêm Cholimex, tăng hương vị món ăn', '/images/gia-vi-category.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(4, 'Sốt chấm', 'Các loại sốt chấm đa dạng, đậm đà hương vị', '/images/sot-cham-category.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18');
+INSERT INTO `OrderDetails` (`OrderDetailID`, `OrderID`, `ProductID`, `Quantity`, `Price`) VALUES
+(1, 1, 1, 2, '15000.00'),
+(2, 2, 3, 1, '25000.00');
+INSERT INTO `Orders` (`OrderID`, `UserID`, `TotalAmount`, `Status`, `CreatedAt`, `UpdatedAt`) VALUES
+(1, 1, '30000.00', 'pending', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(2, 1, '25000.00', 'completed', '2025-04-22 07:50:18', '2025-04-22 07:50:18');
 INSERT INTO `Products` (`ProductID`, `CategoryID`, `ProductName`, `Description`, `Price`, `StockQuantity`, `ImageURL`, `CreatedAt`, `UpdatedAt`) VALUES
-(1, 1, 'Tương ớt Cholimex 250g', 'Tương ớt cay nồng, đậm vị', '15000.00', 100, '/images/tuong-ot-250g.jpg', '2025-04-21 08:48:01', '2025-04-21 08:48:01');
+(1, 1, 'Tương ớt Cholimex 250g', 'Tương ớt cay nồng, hương vị đậm đà, phù hợp chấm và nấu ăn', '15000.00', 100, '/images/tuong-ot-250g.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(2, 1, 'Tương ớt Cholimex 500g', 'Tương ớt cay, dung tích lớn, dùng cho gia đình', '28000.00', 50, '/images/tuong-ot-500g.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(3, 2, 'Nước mắm Cholimex 500ml', 'Nước mắm nguyên chất, thượng hạng, đậm đà hương vị biển', '25000.00', 50, '/images/nuoc-mam-500ml.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(4, 2, 'Nước mắm Cholimex 1L', 'Nước mắm cao cấp, dung tích lớn, tiết kiệm chi phí', '45000.00', 30, '/images/nuoc-mam-1l.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(5, 3, 'Hạt nêm Cholimex 200g', 'Hạt nêm đậm đà, tăng hương vị cho món canh và xào', '20000.00', 80, '/images/hat-nem-200g.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(6, 4, 'Sốt mayonnaise Cholimex 130g', 'Sốt mayonnaise béo ngậy, dùng cho salad và bánh mì', '18000.00', 60, '/images/mayonnaise-130g.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18');
 
-
+INSERT INTO `Roles` (`RoleID`, `RoleName`, `Description`, `CreatedAt`, `UpdatedAt`) VALUES
+(1, 'user', 'Người dùng thông thường, có thể mua sắm và quản lý đơn hàng cá nhân', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(2, 'admin', 'Quản trị viên, có quyền quản lý toàn bộ hệ thống, bao gồm đơn hàng và sản phẩm', '2025-04-22 07:50:18', '2025-04-22 07:50:18');
+INSERT INTO `Users` (`UserID`, `RoleID`, `FullName`, `Email`, `Password`, `Phone`, `Address`, `CreatedAt`, `UpdatedAt`) VALUES
+(1, 1, 'Nguyen Van A', 'user1@example.com', '$2a$10$z9y8X3k1Qw2mR5v6b7n8Ou9pK4lJ3mN2oP5qR7t8u9v0w1x2y3z4A', '0123456789', '123 Hanoi', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(3, 2, 'Admin User', 'admin@example.com', '$2a$10$z9y8X3k1Qw2mR5v6b7n8Ou9pK4lJ3mN2oP5qR7t8u9v0w1x2y3z4A', '0912345678', '789 Hanoi', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(4, 1, 'Nguyen Van VA', 'hau@test.com', '$2a$10$3I5h6aCZm5eCMfe0nyW51OPh5ZhdO0SC02dNlzDIOHEm6/PLcoODa', '123456789', 'HCM', '2025-04-22 08:00:03', '2025-04-22 08:00:03'),
+(5, 2, 'admin', 'admin@test.com', '$2a$10$zsrmo3TISphe6wMq1tdKF.U2qgWRyrLLI0ci97qg2cMW5RgBejUCy', '123456789', 'HCM', '2025-04-22 08:09:39', '2025-04-22 08:20:00');
 
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
