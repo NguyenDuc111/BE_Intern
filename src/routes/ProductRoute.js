@@ -3,9 +3,9 @@ import express from 'express';
 
     const router = express.Router();
 
-    //router lấy tất cả sản phẩm
+    //endpoint lấy tất cả sản phẩm
     router.get('/products', getAllProducts);
-    //router lấy sản phẩm theo ID
+    //endpoint lấy sản phẩm theo ID
     router.get('/product/:id', getProductById);
 
     export default router;

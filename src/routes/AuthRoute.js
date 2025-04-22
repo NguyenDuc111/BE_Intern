@@ -4,13 +4,13 @@ import express from 'express';
 
     const router = express.Router();
 
-    //router đăng ký
+    //endpoint đăng ký
     router.post('/signup', signUp);
-    //router đăng nhập
+    //endpoint đăng nhập
     router.post('/login', signIn);
-    //router quên mật khẩu
+    //endpoint quên mật khẩu
     router.post('/forgot-password', forgotPassword);
-    //router đổi mật khẩu
+    //endpoint đổi mật khẩu
     router.post('/change-password', isAuthenticated, changePassword);
 
     export default router;

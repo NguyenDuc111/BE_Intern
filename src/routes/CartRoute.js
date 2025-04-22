@@ -3,9 +3,9 @@ import express from 'express';
 
     const router = express.Router();
 
-    //router thêm giỏ hàng
+    //endpoint thêm giỏ hàng
     router.post('/cart-add', createCartItem);
-    //router lấy giỏ hàng theo ID người dùng
+    //endpoint lấy giỏ hàng theo ID người dùng
     router.get('/cart/:CustomerID', getCartItems);
 
     export default router;

@@ -4,7 +4,9 @@ import cors from "cors";
 import productRoute from "./routes/ProductRoute.js";
 import cartRoute from "./routes/CartRoute.js";
 import errorHandler from "./middleware/errorHandler.js";
-import Authroute from "./routes/AuthRoute.js";
+import AuthRoute from "./routes/AuthRoute.js";
+import UserRoute from "./routes/UserRoute.js";
+
 dotenv.config();
 
 const app = express();
@@ -16,6 +18,6 @@ app.use(errorHandler);
 //routes
 app.use(productRoute);
 app.use(cartRoute);
-app.use(Authroute);
-
+app.use(AuthRoute);
+app.use(UserRoute);
 app.listen(8080);
