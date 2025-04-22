@@ -5,7 +5,7 @@ import {
   updateCart,
   removeFromCart,
 } from "../controllers/CartController.js";
-import isAuthenticated from "../middleware/auth.js";
+import { isAuthenticated } from "../middleware/auth.js";
 const router = express.Router();
 
 //endpoint thêm giỏ hàng

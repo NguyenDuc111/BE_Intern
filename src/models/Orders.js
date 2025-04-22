@@ -10,31 +10,22 @@ export default class Orders extends Model {
       allowNull: false,
       primaryKey: true
     },
-    CustomerID: {
+    UserID: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Customers',
-        key: 'CustomerID'
+        model: 'Users',
+        key: 'UserID'
       }
-    },
-    OrderDate: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     },
     TotalAmount: {
       type: DataTypes.DECIMAL(10,2),
       allowNull: false
     },
     Status: {
-      type: DataTypes.ENUM('Pending','Processing','Shipped','Delivered','Cancelled'),
+      type: DataTypes.ENUM('pending','completed','cancelled'),
       allowNull: true,
-      defaultValue: "Pending"
-    },
-    ShippingAddress: {
-      type: DataTypes.TEXT,
-      allowNull: false
+      defaultValue: "pending"
     }
   }, {
     sequelize,
@@ -50,10 +41,17 @@ export default class Orders extends Model {
         ]
       },
       {
-        name: "CustomerID",
+        name: "idx_user_id",
         using: "BTREE",
         fields: [
-          { name: "CustomerID" },
+          { name: "UserID" },
+        ]
+      },
+      {
+        name: "idx_status",
+        using: "BTREE",
+        fields: [
+          { name: "Status" },
         ]
       },
     ]

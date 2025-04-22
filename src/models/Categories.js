@@ -35,6 +35,13 @@ export default class Categories extends Model {
           { name: "CategoryID" },
         ]
       },
+      {
+        name: "idx_category_name",
+        using: "BTREE",
+        fields: [
+          { name: "CategoryName" },
+        ]
+      },
     ]
   });
   }

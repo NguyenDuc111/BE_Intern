@@ -1,14 +1,22 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class Customers extends Model {
+export default class Users extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    CustomerID: {
+    UserID: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
+    },
+    RoleID: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'Roles',
+        key: 'RoleID'
+      }
     },
     FullName: {
       type: DataTypes.STRING(100),
@@ -33,7 +41,7 @@ export default class Customers extends Model {
     }
   }, {
     sequelize,
-    tableName: 'Customers',
+    tableName: 'Users',
     timestamps: true,
     indexes: [
       {
@@ -41,7 +49,7 @@ export default class Customers extends Model {
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "CustomerID" },
+          { name: "UserID" },
         ]
       },
       {
@@ -50,6 +58,20 @@ export default class Customers extends Model {
         using: "BTREE",
         fields: [
           { name: "Email" },
+        ]
+      },
+      {
+        name: "idx_email",
+        using: "BTREE",
+        fields: [
+          { name: "Email" },
+        ]
+      },
+      {
+        name: "idx_role_id",
+        using: "BTREE",
+        fields: [
+          { name: "RoleID" },
         ]
       },
     ]

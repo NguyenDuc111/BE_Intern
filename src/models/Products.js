@@ -53,7 +53,14 @@ export default class Products extends Model {
         ]
       },
       {
-        name: "CategoryID",
+        name: "idx_product_name",
+        using: "BTREE",
+        fields: [
+          { name: "ProductName" },
+        ]
+      },
+      {
+        name: "idx_category_id",
         using: "BTREE",
         fields: [
           { name: "CategoryID" },

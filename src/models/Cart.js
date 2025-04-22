@@ -10,12 +10,12 @@ export default class Cart extends Model {
       allowNull: false,
       primaryKey: true
     },
-    CustomerID: {
+    UserID: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: 'Customers',
-        key: 'CustomerID'
+        model: 'Users',
+        key: 'UserID'
       }
     },
     ProductID: {
@@ -49,14 +49,14 @@ export default class Cart extends Model {
         ]
       },
       {
-        name: "CustomerID",
+        name: "idx_user_id",
         using: "BTREE",
         fields: [
-          { name: "CustomerID" },
+          { name: "UserID" },
         ]
       },
       {
-        name: "ProductID",
+        name: "idx_product_id",
         using: "BTREE",
         fields: [
           { name: "ProductID" },

@@ -1,58 +1,149 @@
-import sequelize from '../config/db.js';
-    import initModels from '../models/init-models.js';
+import bcrypt from "bcryptjs";
+import dotenv from "dotenv";
+import sequelize from "../config/db.js";
+import initModels from "../models/init-models.js";
 
-    const models = initModels(sequelize);
-    const { Customers } = models;
+dotenv.config();
 
-    export const getProfile = async (req, res) => {
-      try {
-        const customerId = req.customer.CustomerID;
+const models = initModels(sequelize);
+const { Users, Roles } = models;
 
-        const customer = await Customers.findByPk(customerId, {
-          attributes: ['CustomerID', 'FullName', 'Email', 'Phone', 'Address'],
-        });
+// Lấy danh sách tất cả người dùng (chỉ admin)
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await Users.findAll({
+      include: [{ model: Roles, as: "Role", attributes: ["RoleName"] }],
+      attributes: [
+        "UserID",
+        "FullName",
+        "Email",
+        "Phone",
+        "Address",
+        "CreatedAt",
+        "UpdatedAt",
+      ],
+    });
 
-        if (!customer) {
-          return res.status(404).json({ error: 'Customer not found' });
-        }
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
-        res.status(200).json({ message: 'Profile retrieved successfully', customer });
-      } catch (error) {
-        res.status(500).json({ error: error.message });
+// Lấy thông tin chi tiết người dùng
+export const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const user = await Users.findByPk(id, {
+      include: [{ model: Roles, as: "Role", attributes: ["RoleName"] }],
+      attributes: [
+        "UserID",
+        "FullName",
+        "Email",
+        "Phone",
+        "Address",
+        "CreatedAt",
+        "UpdatedAt",
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Chỉ cho phép người dùng xem thông tin của chính họ hoặc admin
+    if (req.user.UserID !== user.UserID && req.user.RoleName !== "admin") {
+      return res.status(403).json({ error: "Access denied." });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Cập nhật thông tin người dùng
+export const updateUser = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const { FullName, Email, Phone, Address, Password } = req.body;
+
+    const user = await Users.findByPk(id, { transaction });
+    if (!user) {
+      await transaction.rollback();
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Chỉ cho phép người dùng cập nhật thông tin của chính họ hoặc admin
+    if (req.user.UserID !== user.UserID && req.user.RoleName !== "admin") {
+      await transaction.rollback();
+      return res.status(403).json({ error: "Access denied." });
+    }
+
+    // Kiểm tra email mới (nếu có)
+    if (Email && Email !== user.Email) {
+      const existingUser = await Users.findOne({
+        where: { Email },
+        transaction,
+      });
+      if (existingUser) {
+        await transaction.rollback();
+        return res.status(400).json({ error: "Email already exists." });
       }
-    };
+    }
 
-    export const updateProfile = async (req, res) => {
-      try {
-        const customerId = req.customer.CustomerID;
-        const { FullName, Phone, Address } = req.body;
+    // Mã hóa mật khẩu mới (nếu có)
+    let hashedPassword = user.Password;
+    if (Password) {
+      hashedPassword = await bcrypt.hash(Password, 10);
+    }
 
-        // Kiểm tra dữ liệu đầu vào
-        if (!FullName && !Phone && !Address) {
-          return res.status(400).json({ error: 'At least one field (FullName, Phone, Address) must be provided' });
-        }
+    // Cập nhật thông tin
+    await user.update(
+      {
+        FullName: FullName || user.FullName,
+        Email: Email || user.Email,
+        Phone: Phone || user.Phone,
+        Address: Address || user.Address,
+        Password: hashedPassword,
+      },
+      { transaction }
+    );
 
-        // Tìm khách hàng
-        const customer = await Customers.findByPk(customerId);
-        if (!customer) {
-          return res.status(404).json({ error: 'Customer not found' });
-        }
+    await transaction.commit();
+    res.status(200).json({ message: "User updated successfully." });
+  } catch (error) {
+    await transaction.rollback();
+    res.status(500).json({ error: error.message });
+  }
+};
 
-        // Cập nhật các trường được cung cấp
-        const updatedData = {};
-        if (FullName) updatedData.FullName = FullName;
-        if (Phone) updatedData.Phone = Phone;
-        if (Address) updatedData.Address = Address;
+// Xóa người dùng (chỉ admin)
+export const deleteUser = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { id } = req.params;
 
-        await customer.update(updatedData);
+    const user = await Users.findByPk(id, { transaction });
+    if (!user) {
+      await transaction.rollback();
+      return res.status(404).json({ error: "User not found." });
+    }
 
-        // Lấy thông tin mới
-        const updatedCustomer = await Customers.findByPk(customerId, {
-          attributes: ['CustomerID', 'FullName', 'Email', 'Phone', 'Address'],
-        });
+    // Không cho phép xóa chính mình
+    if (req.user.UserID === user.UserID) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Cannot delete your own account." });
+    }
 
-        res.status(200).json({ message: 'Profile updated successfully', customer: updatedCustomer });
-      } catch (error) {
-        res.status(500).json({ error: error.message });
-      }
-    };
+    await user.destroy({ transaction });
+
+    await transaction.commit();
+    res.status(200).json({ message: "User deleted successfully." });
+  } catch (error) {
+    await transaction.rollback();
+    res.status(500).json({ error: error.message });
+  }
+};

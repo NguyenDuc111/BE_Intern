@@ -1,18 +1,18 @@
 import express from "express";
 import {
-  signUp,
-  signIn,
+  signup,
   forgotPassword,
   changePassword,
+  login,
 } from "../controllers/AuthController.js";
-import isAuthenticated from "../middleware/auth.js";
+import { isAuthenticated } from '../middleware/auth.js'
 
 const router = express.Router();
 
 //endpoint đăng ký
-router.post("/signup", signUp);
+router.post("/signup", signup);
 //endpoint đăng nhập
-router.post("/login", signIn);
+router.post("/login", login);
 //endpoint quên mật khẩu
 router.post("/forgot-password", forgotPassword);
 //endpoint đổi mật khẩu

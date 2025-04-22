@@ -30,7 +30,7 @@ export default class OrderDetails extends Model {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    UnitPrice: {
+    Price: {
       type: DataTypes.DECIMAL(10,2),
       allowNull: false
     }
@@ -48,14 +48,14 @@ export default class OrderDetails extends Model {
         ]
       },
       {
-        name: "OrderID",
+        name: "idx_order_id",
         using: "BTREE",
         fields: [
           { name: "OrderID" },
         ]
       },
       {
-        name: "ProductID",
+        name: "idx_product_id",
         using: "BTREE",
         fields: [
           { name: "ProductID" },

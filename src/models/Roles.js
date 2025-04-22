@@ -1,34 +1,27 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class ResetTokens extends Model {
+export default class Roles extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    TokenID: {
+    RoleID: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    UserID: {
-      type: DataTypes.INTEGER,
+    RoleName: {
+      type: DataTypes.STRING(50),
       allowNull: false,
-      references: {
-        model: 'Users',
-        key: 'UserID'
-      }
+      unique: "RoleName"
     },
-    Token: {
-      type: DataTypes.STRING(255),
-      allowNull: false
-    },
-    ExpiresAt: {
-      type: DataTypes.DATE,
-      allowNull: false
+    Description: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   }, {
     sequelize,
-    tableName: 'ResetTokens',
+    tableName: 'Roles',
     timestamps: true,
     indexes: [
       {
@@ -36,21 +29,22 @@ export default class ResetTokens extends Model {
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "TokenID" },
+          { name: "RoleID" },
         ]
       },
       {
-        name: "idx_token",
+        name: "RoleName",
+        unique: true,
         using: "BTREE",
         fields: [
-          { name: "Token" },
+          { name: "RoleName" },
         ]
       },
       {
-        name: "idx_user_id",
+        name: "idx_role_name",
         using: "BTREE",
         fields: [
-          { name: "UserID" },
+          { name: "RoleName" },
         ]
       },
     ]
