@@ -17,6 +17,10 @@ export default class Categories extends Model {
     Description: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    ImageURL: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     }
   }, {
     sequelize,

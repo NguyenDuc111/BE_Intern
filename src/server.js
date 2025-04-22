@@ -6,7 +6,8 @@ import cartRoute from "./routes/CartRoute.js";
 import errorHandler from "./middleware/errorHandler.js";
 import AuthRoute from "./routes/AuthRoute.js";
 import UserRoute from "./routes/UserRoute.js";
-
+import CategoryRoute from "./routes/CategoryRoute.js";
+import OrderRoute from "./routes/OrderRoute.js";
 dotenv.config();
 
 const app = express();
@@ -20,4 +21,7 @@ app.use(productRoute);
 app.use(cartRoute);
 app.use(AuthRoute);
 app.use(UserRoute);
+app.use(CategoryRoute);
+app.use(OrderRoute);
+
 app.listen(8080);

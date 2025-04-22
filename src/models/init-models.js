@@ -7,6 +7,7 @@ import _OrderDetails from  "./OrderDetails.js";
 import _Orders from  "./Orders.js";
 import _Products from  "./Products.js";
 import _Promotions from  "./Promotions.js";
+import _ResetTokens from  "./ResetTokens.js";
 import _Reviews from  "./Reviews.js";
 
 export default function initModels(sequelize) {
@@ -17,6 +18,7 @@ export default function initModels(sequelize) {
   const Orders = _Orders.init(sequelize, DataTypes);
   const Products = _Products.init(sequelize, DataTypes);
   const Promotions = _Promotions.init(sequelize, DataTypes);
+  const ResetTokens = _ResetTokens.init(sequelize, DataTypes);
   const Reviews = _Reviews.init(sequelize, DataTypes);
 
   Products.belongsTo(Categories, { as: "Category", foreignKey: "CategoryID"});
@@ -25,6 +27,8 @@ export default function initModels(sequelize) {
   Customers.hasMany(Cart, { as: "Carts", foreignKey: "CustomerID"});
   Orders.belongsTo(Customers, { as: "Customer", foreignKey: "CustomerID"});
   Customers.hasMany(Orders, { as: "Orders", foreignKey: "CustomerID"});
+  ResetTokens.belongsTo(Customers, { as: "Customer", foreignKey: "CustomerID"});
+  Customers.hasMany(ResetTokens, { as: "ResetTokens", foreignKey: "CustomerID"});
   Reviews.belongsTo(Customers, { as: "Customer", foreignKey: "CustomerID"});
   Customers.hasMany(Reviews, { as: "Reviews", foreignKey: "CustomerID"});
   OrderDetails.belongsTo(Orders, { as: "Order", foreignKey: "OrderID"});
@@ -44,6 +48,7 @@ export default function initModels(sequelize) {
     Orders,
     Products,
     Promotions,
+    ResetTokens,
     Reviews,
   };
 }
