@@ -10,20 +10,20 @@ export default class Reviews extends Model {
       allowNull: false,
       primaryKey: true
     },
+    UserID: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'Users',
+        key: 'UserID'
+      }
+    },
     ProductID: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
         model: 'Products',
         key: 'ProductID'
-      }
-    },
-    CustomerID: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'Customers',
-        key: 'CustomerID'
       }
     },
     Rating: {
@@ -48,17 +48,17 @@ export default class Reviews extends Model {
         ]
       },
       {
-        name: "ProductID",
+        name: "idx_user_id",
         using: "BTREE",
         fields: [
-          { name: "ProductID" },
+          { name: "UserID" },
         ]
       },
       {
-        name: "CustomerID",
+        name: "idx_product_id",
         using: "BTREE",
         fields: [
-          { name: "CustomerID" },
+          { name: "ProductID" },
         ]
       },
     ]

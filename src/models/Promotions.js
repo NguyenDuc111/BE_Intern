@@ -10,16 +10,15 @@ export default class Promotions extends Model {
       allowNull: false,
       primaryKey: true
     },
-    PromotionCode: {
-      type: DataTypes.STRING(50),
+    ProductID: {
+      type: DataTypes.INTEGER,
       allowNull: false,
-      unique: "PromotionCode"
+      references: {
+        model: 'Products',
+        key: 'ProductID'
+      }
     },
-    Description: {
-      type: DataTypes.TEXT,
-      allowNull: true
-    },
-    DiscountPercent: {
+    DiscountPercentage: {
       type: DataTypes.DECIMAL(5,2),
       allowNull: false
     },
@@ -45,11 +44,10 @@ export default class Promotions extends Model {
         ]
       },
       {
-        name: "PromotionCode",
-        unique: true,
+        name: "idx_product_id",
         using: "BTREE",
         fields: [
-          { name: "PromotionCode" },
+          { name: "ProductID" },
         ]
       },
     ]

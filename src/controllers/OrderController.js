@@ -36,11 +36,9 @@ export const checkout = async (req, res) => {
     for (const item of cartItems) {
       if (item.Product.StockQuantity < item.Quantity) {
         await transaction.rollback();
-        return res
-          .status(400)
-          .json({
-            error: `Insufficient stock for product ID ${item.ProductID}`,
-          });
+        return res.status(400).json({
+          error: `Insufficient stock for product ID ${item.ProductID}`,
+        });
       }
     }
 
@@ -153,11 +151,9 @@ export const updateOrder = async (req, res) => {
     const { Status } = req.body;
 
     if (!Status || !["pending", "completed", "cancelled"].includes(Status)) {
-      return res
-        .status(400)
-        .json({
-          error: "Valid Status is required (pending, completed, cancelled)",
-        });
+      return res.status(400).json({
+        error: "Valid Status is required (pending, completed, cancelled)",
+      });
     }
 
     const order = await Orders.findOne({

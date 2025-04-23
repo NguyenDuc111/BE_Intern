@@ -8,7 +8,7 @@ const router = express.Router();
 
 //endpoint lấy tất cả sản phẩm
 router.get("/products", getAllProducts);
-//endpoint lấy chi tiết sản phẩm theo ID
+//endpoint xem chi tiết sản phẩm theo ID
 router.get("/product/:id", getProductById);
 
 export default router;
