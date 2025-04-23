@@ -1,17 +1,16 @@
-import express from "express";
-import {
-  getAllCategories,
-  getCategoryById,
-  getProductsByCategory,
-} from "../controllers/CategoryController.js";
+import express from 'express';
+import { getAllCategories, createCategory, updateCategory, deleteCategory } from '../controllers/CategoryController.js';
+import { isAuthenticated, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-//endpoint lấy tất cả danh mục
-router.get("/categories", getAllCategories);
-//endpoint lấy từng danh mục riêng
-router.get("/category/:id", getCategoryById);
-//endpoint lấy sản phẩm theo danh mục
-router.get("/category/:id/products", getProductsByCategory);
+//endpoint lấy danh sách danh mục
+router.get('/categories', isAuthenticated, getAllCategories); 
+//endpoint thêm danh mục
+router.post('/cate-add', isAuthenticated, isAdmin, createCategory); 
+//endpoint cập nhật danh mục
+router.put('/cate-update/:id', isAuthenticated, isAdmin, updateCategory); 
+//endpoint xóa danh mục
+router.delete('/cate-del/:id', isAuthenticated, isAdmin, deleteCategory); 
 
 export default router;

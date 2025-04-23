@@ -4,6 +4,26 @@ import initModels from "../models/init-models.js";
 const models = initModels(sequelize);
 const { Reviews, Users, Products, Roles } = models;
 
+// Xem danh sách đánh giá
+export const getAllReviews = async (req, res) => {
+  try {
+    const reviews = await Reviews.findAll({
+      include: [
+        { model: Users, as: "User", attributes: ["UserID", "FullName"] },
+        {
+          model: Products,
+          as: "Product",
+          attributes: ["ProductID", "ProductName"],
+        },
+      ],
+      attributes: ["ReviewID", "Rating", "Comment", "CreatedAt", "UpdatedAt"],
+    });
+    res.status(200).json(reviews);
+  } catch (error) {
+    res.status(500).json({ error: `Get reviews error: ${error.message}` });
+  }
+};
+
 // Tạo đánh giá mới
 export const createReview = async (req, res) => {
   const transaction = await sequelize.transaction();

@@ -3,7 +3,7 @@ import {
   addToCart,
   getCart,
   updateCart,
-  removeFromCart,
+  deleteFromCart,
 } from "../controllers/CartController.js";
 import { isAuthenticated } from "../middleware/auth.js";
 const router = express.Router();
@@ -11,9 +11,9 @@ const router = express.Router();
 //endpoint thêm giỏ hàng
 router.post("/cart-add", isAuthenticated, addToCart);
 //endpoint lấy giỏ hàng theo ID người dùng
-router.get("/cart/:CustomerID", isAuthenticated, getCart);
+router.get("/cart/:UserID", isAuthenticated, getCart);
 //endpoint chỉnh sửa giỏ hàng
 router.put("/edit/:cartId", isAuthenticated, updateCart);
 //endpoint xóa giỏ hàng
-router.delete("/delete/:cartId", isAuthenticated, removeFromCart);
+router.delete("/del/:cartId", isAuthenticated, deleteFromCart);
 export default router;

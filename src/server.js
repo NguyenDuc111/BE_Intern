@@ -8,6 +8,10 @@ import AuthRoute from "./routes/AuthRoute.js";
 import UserRoute from "./routes/UserRoute.js";
 import CategoryRoute from "./routes/CategoryRoute.js";
 import OrderRoute from "./routes/OrderRoute.js";
+import ReviewRoute from "./routes/ReviewRoute.js";
+import NotificationRoute from "./routes/NotificationRoute.js";
+import WishlistRoute from "./routes/WishlistRoute.js";
+
 dotenv.config();
 
 const app = express();
@@ -23,5 +27,8 @@ app.use(AuthRoute);
 app.use(UserRoute);
 app.use(CategoryRoute);
 app.use(OrderRoute);
+app.use(ReviewRoute);
+app.use(NotificationRoute);
+app.use(WishlistRoute);
 
 app.listen(8080);

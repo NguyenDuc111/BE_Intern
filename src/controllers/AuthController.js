@@ -4,11 +4,21 @@ import crypto from "crypto";
 import dotenv from "dotenv";
 import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
+import nodemailer from "nodemailer";
 
 dotenv.config();
 
 const models = initModels(sequelize);
 const { Users, Roles, ResetTokens } = models;
+
+// Cấu hình Nodemailer
+const transporter = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 // Đăng nhập
 export const login = async (req, res) => {
@@ -122,70 +132,99 @@ export const forgotPassword = async (req, res) => {
       { transaction }
     );
 
+    // Tạo link reset
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    // Gửi email
+    const mailOptions = {
+      from: process.env.EMAIL_USER,
+      to: Email,
+      subject: "Đặt lại mật khẩu Cholimex",
+      html: `
+        <h2>Đặt lại mật khẩu</h2>
+        <p>Nhấn vào liên kết dưới đây để đặt lại mật khẩu của bạn:</p>
+        <a href="${resetLink}" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Đặt lại mật khẩu</a>
+        <p>Liên kết này sẽ hết hạn sau 1 giờ.</p>
+        <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
     await transaction.commit();
-    res.status(200).json({ message: "Password reset token generated.", token });
+    res
+      .status(200)
+      .json({ message: "Password reset link sent to your email." });
   } catch (error) {
     await transaction.rollback();
     res.status(500).json({ error: `Forgot password error: ${error.message}` });
   }
 };
 
-// Thay đổi mật khẩu
+// Đặt lại mật khẩu
+export const resetPassword = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const { Token, NewPassword } = req.body;
+
+    // Kiểm tra token
+    const resetToken = await ResetTokens.findOne({
+      where: { Token },
+      transaction,
+    });
+    if (!resetToken) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Invalid or expired token." });
+    }
+
+    if (resetToken.ExpiresAt < new Date()) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Token has expired." });
+    }
+
+    // Tìm người dùng
+    const user = await Users.findByPk(resetToken.UserID, { transaction });
+    if (!user) {
+      await transaction.rollback();
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Mã hóa mật khẩu mới
+    const hashedPassword = await bcrypt.hash(NewPassword, 10);
+
+    // Cập nhật mật khẩu
+    await user.update({ Password: hashedPassword }, { transaction });
+
+    // Xóa token sau khi sử dụng
+    await ResetTokens.destroy({ where: { Token }, transaction });
+
+    await transaction.commit();
+    res.status(200).json({ message: "Password reset successfully." });
+  } catch (error) {
+    await transaction.rollback();
+    res.status(500).json({ error: `Reset password error: ${error.message}` });
+  }
+};
+
+// Thay đổi mật khẩu (khi đã đăng nhập)
 export const changePassword = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { Token, NewPassword, OldPassword } = req.body;
+    const { OldPassword, NewPassword } = req.body;
+    const { UserID } = req.user;
 
-    let user;
-
-    if (Token) {
-      // Thay đổi mật khẩu qua token reset
-      const resetToken = await ResetTokens.findOne({
-        where: { Token },
-        transaction,
-      });
-      if (!resetToken) {
-        await transaction.rollback();
-        return res.status(400).json({ error: "Invalid or expired token." });
-      }
-
-      if (resetToken.ExpiresAt < new Date()) {
-        await transaction.rollback();
-        return res.status(400).json({ error: "Token has expired." });
-      }
-
-      user = await Users.findByPk(resetToken.UserID, { transaction });
-      if (!user) {
-        await transaction.rollback();
-        return res.status(404).json({ error: "User not found." });
-      }
-
-      // Xóa token sau khi sử dụng
-      await ResetTokens.destroy({ where: { Token }, transaction });
-    } else if (req.user) {
-      // Thay đổi mật khẩu khi đã đăng nhập
-      user = await Users.findByPk(req.user.UserID, { transaction });
-      if (!user) {
-        await transaction.rollback();
-        return res.status(404).json({ error: "User not found." });
-      }
-
-      // Kiểm tra mật khẩu cũ
-      if (!OldPassword) {
-        await transaction.rollback();
-        return res.status(400).json({ error: "Old password is required." });
-      }
-
-      const isMatch = await bcrypt.compare(OldPassword, user.Password);
-      if (!isMatch) {
-        await transaction.rollback();
-        return res.status(401).json({ error: "Incorrect old password." });
-      }
-    } else {
+    // Tìm người dùng
+    const user = await Users.findByPk(UserID, { transaction });
+    if (!user) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({ error: "Token or authentication required." });
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    // Kiểm tra mật khẩu cũ
+    const isMatch = await bcrypt.compare(OldPassword, user.Password);
+    if (!isMatch) {
+      await transaction.rollback();
+      return res.status(401).json({ error: "Incorrect old password." });
     }
 
     // Mã hóa mật khẩu mới

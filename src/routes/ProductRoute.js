@@ -2,7 +2,11 @@ import express from "express";
 import {
   getAllProducts,
   getProductById,
+  addProduct,
+  updateProduct,
+  deleteProduct,
 } from "../controllers/ProductController.js";
+import { isAuthenticated, isAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -10,5 +14,10 @@ const router = express.Router();
 router.get("/products", getAllProducts);
 //endpoint xem chi tiết sản phẩm theo ID
 router.get("/product/:id", getProductById);
-
+//endpoint thêm sản phẩm (admin)
+router.post("/product-add", isAuthenticated, isAdmin, addProduct);
+//endpoint cập nhật sản phẩm
+router.put("/product-update/:id", isAuthenticated, isAdmin, updateProduct);
+//endpoint xóa sản phẩm
+router.delete("/product-del/:id", isAuthenticated, isAdmin, deleteProduct);
 export default router;

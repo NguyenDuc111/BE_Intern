@@ -2,44 +2,108 @@ import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
 
 const models = initModels(sequelize);
-const { Promotions, Products } = models;
+const { Promotions, Products, Users } = models;
 
-// Tạo khuyến mãi mới
+// Xem danh sách khuyến mãi
+export const getAllPromotions = async (req, res) => {
+  try {
+    const promotions = await Promotions.findAll({
+      include: [
+        {
+          model: Products,
+          as: "Product",
+          attributes: ["ProductID", "ProductName"],
+          required: false,
+        },
+        {
+          model: Users,
+          as: "User",
+          attributes: ["UserID", "FullName"],
+          required: false,
+        },
+      ],
+      attributes: [
+        "PromotionID",
+        "PromotionName",
+        "Description",
+        "DiscountPercentage",
+        "DiscountValue",
+        "StartDate",
+        "EndDate",
+        "CreatedAt",
+        "UpdatedAt",
+      ],
+    });
+    res.status(200).json(promotions);
+  } catch (error) {
+    res.status(500).json({ error: `Get promotions error: ${error.message}` });
+  }
+};
+
+// Thêm khuyến mãi mới
 export const createPromotion = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { ProductID, DiscountPercentage, StartDate, EndDate } = req.body;
+    const {
+      UserID,
+      ProductID,
+      PromotionName,
+      Description,
+      DiscountPercentage,
+      DiscountValue,
+      StartDate,
+      EndDate,
+    } = req.body;
 
-    // Kiểm tra sản phẩm
-    const product = await Products.findByPk(ProductID, { transaction });
-    if (!product) {
-      await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+    // Kiểm tra UserID (nếu có)
+    if (UserID) {
+      const user = await Users.findByPk(UserID, { transaction });
+      if (!user) {
+        await transaction.rollback();
+        return res.status(400).json({ error: "Invalid UserID." });
+      }
     }
 
-    // Kiểm tra DiscountPercentage
-    if (DiscountPercentage < 0 || DiscountPercentage > 100) {
+    // Kiểm tra ProductID (nếu có)
+    if (ProductID) {
+      const product = await Products.findByPk(ProductID, { transaction });
+      if (!product) {
+        await transaction.rollback();
+        return res.status(400).json({ error: "Invalid ProductID." });
+      }
+    }
+
+    // Kiểm tra dữ liệu
+    if (
+      DiscountPercentage &&
+      (DiscountPercentage < 0 || DiscountPercentage > 100)
+    ) {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Discount percentage must be between 0 and 100." });
+        .json({ error: "DiscountPercentage must be between 0 and 100." });
     }
-
-    // Kiểm tra ngày
-    const start = new Date(StartDate);
-    const end = new Date(EndDate);
-    if (end < start) {
+    if (DiscountValue && DiscountValue < 0) {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "End date must be after start date." });
+        .json({ error: "DiscountValue must be non-negative." });
+    }
+    if (new Date(StartDate) >= new Date(EndDate)) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "EndDate must be after StartDate." });
     }
 
-    // Tạo khuyến mãi
     const promotion = await Promotions.create(
       {
+        UserID,
         ProductID,
+        PromotionName,
+        Description,
         DiscountPercentage,
+        DiscountValue,
         StartDate,
         EndDate,
       },
@@ -56,48 +120,21 @@ export const createPromotion = async (req, res) => {
   }
 };
 
-// Lấy tất cả khuyến mãi
-export const getAllPromotions = async (req, res) => {
-  try {
-    const promotions = await Promotions.findAll({
-      include: [
-        { model: Products, attributes: ["ProductID", "ProductName", "Price"] },
-      ],
-    });
-
-    res.status(200).json(promotions);
-  } catch (error) {
-    res.status(500).json({ error: `Get promotions error: ${error.message}` });
-  }
-};
-
-// Lấy khuyến mãi theo ID
-export const getPromotionById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const promotion = await Promotions.findByPk(id, {
-      include: [
-        { model: Products, attributes: ["ProductID", "ProductName", "Price"] },
-      ],
-    });
-
-    if (!promotion) {
-      return res.status(404).json({ error: "Promotion not found." });
-    }
-
-    res.status(200).json(promotion);
-  } catch (error) {
-    res.status(500).json({ error: `Get promotion error: ${error.message}` });
-  }
-};
-
 // Cập nhật khuyến mãi
 export const updatePromotion = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const { id } = req.params;
-    const { ProductID, DiscountPercentage, StartDate, EndDate } = req.body;
+    const {
+      UserID,
+      ProductID,
+      PromotionName,
+      Description,
+      DiscountPercentage,
+      DiscountValue,
+      StartDate,
+      EndDate,
+    } = req.body;
 
     const promotion = await Promotions.findByPk(id, { transaction });
     if (!promotion) {
@@ -105,16 +142,23 @@ export const updatePromotion = async (req, res) => {
       return res.status(404).json({ error: "Promotion not found." });
     }
 
-    // Kiểm tra sản phẩm nếu ProductID thay đổi
-    if (ProductID && ProductID !== promotion.ProductID) {
-      const product = await Products.findByPk(ProductID, { transaction });
-      if (!product) {
+    // Kiểm tra UserID (nếu có)
+    if (UserID !== undefined) {
+      if (UserID && !(await Users.findByPk(UserID, { transaction }))) {
         await transaction.rollback();
-        return res.status(404).json({ error: "Product not found." });
+        return res.status(400).json({ error: "Invalid UserID." });
       }
     }
 
-    // Kiểm tra DiscountPercentage
+    // Kiểm tra ProductID (nếu có)
+    if (ProductID !== undefined) {
+      if (ProductID && !(await Products.findByPk(ProductID, { transaction }))) {
+        await transaction.rollback();
+        return res.status(400).json({ error: "Invalid ProductID." });
+      }
+    }
+
+    // Kiểm tra dữ liệu
     if (
       DiscountPercentage !== undefined &&
       (DiscountPercentage < 0 || DiscountPercentage > 100)
@@ -122,29 +166,33 @@ export const updatePromotion = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Discount percentage must be between 0 and 100." });
+        .json({ error: "DiscountPercentage must be between 0 and 100." });
     }
-
-    // Kiểm tra ngày
-    const start = StartDate
-      ? new Date(StartDate)
-      : new Date(promotion.StartDate);
-    const end = EndDate ? new Date(EndDate) : new Date(promotion.EndDate);
-    if (end < start) {
+    if (DiscountValue !== undefined && DiscountValue < 0) {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "End date must be after start date." });
+        .json({ error: "DiscountValue must be non-negative." });
+    }
+    if (StartDate && EndDate && new Date(StartDate) >= new Date(EndDate)) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "EndDate must be after StartDate." });
     }
 
-    // Cập nhật khuyến mãi
     await promotion.update(
       {
-        ProductID: ProductID || promotion.ProductID,
+        UserID: UserID !== undefined ? UserID : promotion.UserID,
+        ProductID: ProductID !== undefined ? ProductID : promotion.ProductID,
+        PromotionName: PromotionName || promotion.PromotionName,
+        Description: Description || promotion.Description,
         DiscountPercentage:
           DiscountPercentage !== undefined
             ? DiscountPercentage
             : promotion.DiscountPercentage,
+        DiscountValue:
+          DiscountValue !== undefined ? DiscountValue : promotion.DiscountValue,
         StartDate: StartDate || promotion.StartDate,
         EndDate: EndDate || promotion.EndDate,
       },
@@ -152,9 +200,7 @@ export const updatePromotion = async (req, res) => {
     );
 
     await transaction.commit();
-    res
-      .status(200)
-      .json({ message: "Promotion updated successfully.", promotion });
+    res.status(200).json({ message: "Promotion updated successfully." });
   } catch (error) {
     await transaction.rollback();
     res.status(500).json({ error: `Update promotion error: ${error.message}` });
