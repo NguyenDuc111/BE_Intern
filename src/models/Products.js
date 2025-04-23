@@ -10,16 +10,8 @@ export default class Products extends Model {
       allowNull: false,
       primaryKey: true
     },
-    CategoryID: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'Categories',
-        key: 'CategoryID'
-      }
-    },
     ProductName: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(255),
       allowNull: false
     },
     Description: {
@@ -32,8 +24,7 @@ export default class Products extends Model {
     },
     StockQuantity: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 0
+      allowNull: false
     },
     ImageURL: {
       type: DataTypes.STRING(255),
@@ -50,20 +41,6 @@ export default class Products extends Model {
         using: "BTREE",
         fields: [
           { name: "ProductID" },
-        ]
-      },
-      {
-        name: "idx_product_name",
-        using: "BTREE",
-        fields: [
-          { name: "ProductName" },
-        ]
-      },
-      {
-        name: "idx_category_id",
-        using: "BTREE",
-        fields: [
-          { name: "CategoryID" },
         ]
       },
     ]

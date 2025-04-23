@@ -1,34 +1,30 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class LoyaltyPoints extends Model {
+export default class ProductCategories extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    PointID: {
-      autoIncrement: true,
+    ProductID: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      primaryKey: true
-    },
-    UserID: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
+      primaryKey: true,
       references: {
-        model: 'Users',
-        key: 'UserID'
+        model: 'Products',
+        key: 'ProductID'
       }
     },
-    Points: {
+    CategoryID: {
       type: DataTypes.INTEGER,
-      allowNull: false
-    },
-    Description: {
-      type: DataTypes.TEXT,
-      allowNull: true
+      allowNull: false,
+      primaryKey: true,
+      references: {
+        model: 'Categories',
+        key: 'CategoryID'
+      }
     }
   }, {
     sequelize,
-    tableName: 'LoyaltyPoints',
+    tableName: 'ProductCategories',
     timestamps: true,
     indexes: [
       {
@@ -36,14 +32,15 @@ export default class LoyaltyPoints extends Model {
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "PointID" },
+          { name: "ProductID" },
+          { name: "CategoryID" },
         ]
       },
       {
-        name: "UserID",
+        name: "CategoryID",
         using: "BTREE",
         fields: [
-          { name: "UserID" },
+          { name: "CategoryID" },
         ]
       },
     ]

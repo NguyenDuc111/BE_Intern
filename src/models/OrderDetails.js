@@ -12,7 +12,7 @@ export default class OrderDetails extends Model {
     },
     OrderID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Orders',
         key: 'OrderID'
@@ -20,7 +20,7 @@ export default class OrderDetails extends Model {
     },
     ProductID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Products',
         key: 'ProductID'
@@ -30,14 +30,14 @@ export default class OrderDetails extends Model {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    Price: {
+    UnitPrice: {
       type: DataTypes.DECIMAL(10,2),
       allowNull: false
     }
   }, {
     sequelize,
     tableName: 'OrderDetails',
-    timestamps: false,
+    timestamps: true,
     indexes: [
       {
         name: "PRIMARY",
@@ -48,14 +48,14 @@ export default class OrderDetails extends Model {
         ]
       },
       {
-        name: "idx_order_id",
+        name: "OrderID",
         using: "BTREE",
         fields: [
           { name: "OrderID" },
         ]
       },
       {
-        name: "idx_product_id",
+        name: "ProductID",
         using: "BTREE",
         fields: [
           { name: "ProductID" },

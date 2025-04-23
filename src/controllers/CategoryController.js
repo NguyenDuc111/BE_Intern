@@ -2,12 +2,20 @@ import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
 
 const models = initModels(sequelize);
-const { Categories } = models;
+const { Categories, Products } = models;
 
 // Xem danh sách danh mục
 export const getAllCategories = async (req, res) => {
   try {
     const categories = await Categories.findAll({
+      include: [
+        {
+          model: Products,
+          as: "Products",
+          through: { attributes: [] },
+          attributes: ["ProductID", "ProductName"],
+        },
+      ],
       attributes: [
         "CategoryID",
         "CategoryName",

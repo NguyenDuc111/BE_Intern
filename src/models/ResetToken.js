@@ -1,10 +1,10 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class Reviews extends Model {
+export default class ResetToken extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    ReviewID: {
+    TokenID: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -18,25 +18,18 @@ export default class Reviews extends Model {
         key: 'UserID'
       }
     },
-    ProductID: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'Products',
-        key: 'ProductID'
-      }
+    Token: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: "Token"
     },
-    Rating: {
-      type: DataTypes.INTEGER,
-      allowNull: true
-    },
-    Comment: {
-      type: DataTypes.TEXT,
-      allowNull: true
+    ExpiresAt: {
+      type: DataTypes.DATE,
+      allowNull: false
     }
   }, {
     sequelize,
-    tableName: 'Reviews',
+    tableName: 'ResetToken',
     timestamps: true,
     indexes: [
       {
@@ -44,7 +37,15 @@ export default class Reviews extends Model {
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "ReviewID" },
+          { name: "TokenID" },
+        ]
+      },
+      {
+        name: "Token",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "Token" },
         ]
       },
       {
@@ -52,13 +53,6 @@ export default class Reviews extends Model {
         using: "BTREE",
         fields: [
           { name: "UserID" },
-        ]
-      },
-      {
-        name: "ProductID",
-        using: "BTREE",
-        fields: [
-          { name: "ProductID" },
         ]
       },
     ]

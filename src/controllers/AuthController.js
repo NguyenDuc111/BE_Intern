@@ -46,6 +46,9 @@ export const login = async (req, res) => {
       {
         UserID: user.UserID,
         Email: user.Email,
+        FullName:user.FullName,
+        Phone:user.Phone,
+        Address:user.Address,
         RoleName: user.Role.RoleName,
       },
       process.env.JWT_SECRET || "cholimex2025secret",

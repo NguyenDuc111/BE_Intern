@@ -12,10 +12,18 @@ export default class Orders extends Model {
     },
     UserID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Users',
         key: 'UserID'
+      }
+    },
+    PromotionID: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'Promotion',
+        key: 'PromotionID'
       }
     },
     TotalAmount: {
@@ -23,9 +31,13 @@ export default class Orders extends Model {
       allowNull: false
     },
     Status: {
-      type: DataTypes.ENUM('pending','completed','cancelled'),
+      type: DataTypes.ENUM('Pending','Processing','Shipped','Delivered','Cancelled'),
       allowNull: true,
-      defaultValue: "pending"
+      defaultValue: "Pending"
+    },
+    ShippingAddress: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   }, {
     sequelize,
@@ -41,17 +53,17 @@ export default class Orders extends Model {
         ]
       },
       {
-        name: "idx_user_id",
+        name: "UserID",
         using: "BTREE",
         fields: [
           { name: "UserID" },
         ]
       },
       {
-        name: "idx_status",
+        name: "PromotionID",
         using: "BTREE",
         fields: [
-          { name: "Status" },
+          { name: "PromotionID" },
         ]
       },
     ]

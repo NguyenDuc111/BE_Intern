@@ -12,24 +12,24 @@ export default class Users extends Model {
     },
     RoleID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Roles',
         key: 'RoleID'
       }
     },
     FullName: {
-      type: DataTypes.STRING(100),
-      allowNull: false
+      type: DataTypes.STRING(255),
+      allowNull: true
     },
     Email: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+      type: DataTypes.STRING(255),
+      allowNull: true,
       unique: "Email"
     },
     Password: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: true
     },
     Phone: {
       type: DataTypes.STRING(20),
@@ -61,14 +61,7 @@ export default class Users extends Model {
         ]
       },
       {
-        name: "idx_email",
-        using: "BTREE",
-        fields: [
-          { name: "Email" },
-        ]
-      },
-      {
-        name: "idx_role_id",
+        name: "RoleID",
         using: "BTREE",
         fields: [
           { name: "RoleID" },

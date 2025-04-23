@@ -5,7 +5,7 @@ import { isAuthenticated, isAdmin } from '../middleware/auth.js';
 const router = express.Router();
 
 //endpoint lấy danh sách danh mục
-router.get('/categories', isAuthenticated, getAllCategories); 
+router.get('/categories',  getAllCategories); 
 //endpoint thêm danh mục
 router.post('/cate-add', isAuthenticated, isAdmin, createCategory); 
 //endpoint cập nhật danh mục

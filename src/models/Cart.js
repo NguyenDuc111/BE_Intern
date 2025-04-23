@@ -12,7 +12,7 @@ export default class Cart extends Model {
     },
     UserID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Users',
         key: 'UserID'
@@ -20,7 +20,7 @@ export default class Cart extends Model {
     },
     ProductID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Products',
         key: 'ProductID'
@@ -29,16 +29,11 @@ export default class Cart extends Model {
     Quantity: {
       type: DataTypes.INTEGER,
       allowNull: false
-    },
-    AddedAt: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     }
   }, {
     sequelize,
     tableName: 'Cart',
-    timestamps: false,
+    timestamps: true,
     indexes: [
       {
         name: "PRIMARY",
@@ -49,14 +44,14 @@ export default class Cart extends Model {
         ]
       },
       {
-        name: "idx_user_id",
+        name: "UserID",
         using: "BTREE",
         fields: [
           { name: "UserID" },
         ]
       },
       {
-        name: "idx_product_id",
+        name: "ProductID",
         using: "BTREE",
         fields: [
           { name: "ProductID" },

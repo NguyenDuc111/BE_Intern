@@ -1,27 +1,39 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class Roles extends Model {
+export default class Promotion extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    RoleID: {
+    PromotionID: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    RoleName: {
+    Code: {
       type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: "RoleName"
+      allowNull: true,
+      unique: "Code"
     },
     Description: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    DiscountPercentage: {
+      type: DataTypes.DECIMAL(5,2),
+      allowNull: true
+    },
+    StartDate: {
+      type: DataTypes.DATE,
+      allowNull: true
+    },
+    EndDate: {
+      type: DataTypes.DATE,
+      allowNull: true
     }
   }, {
     sequelize,
-    tableName: 'Roles',
+    tableName: 'Promotion',
     timestamps: true,
     indexes: [
       {
@@ -29,15 +41,15 @@ export default class Roles extends Model {
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "RoleID" },
+          { name: "PromotionID" },
         ]
       },
       {
-        name: "RoleName",
+        name: "Code",
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "RoleName" },
+          { name: "Code" },
         ]
       },
     ]

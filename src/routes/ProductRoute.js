@@ -5,6 +5,8 @@ import {
   addProduct,
   updateProduct,
   deleteProduct,
+  addCategoriesToProduct,
+  removeCategoriesFromProduct,
 } from "../controllers/ProductController.js";
 import { isAuthenticated, isAdmin } from "../middleware/auth.js";
 
@@ -20,4 +22,9 @@ router.post("/product-add", isAuthenticated, isAdmin, addProduct);
 router.put("/product-update/:id", isAuthenticated, isAdmin, updateProduct);
 //endpoint xóa sản phẩm
 router.delete("/product-del/:id", isAuthenticated, isAdmin, deleteProduct);
+//endpoint thêm danh mục vào sản phẩm
+router.post('/product-add/:id/categories', isAuthenticated, isAdmin, addCategoriesToProduct);
+//endpoint xóa danh mục khỏi sản phẩm 
+router.delete('/product-del/:id/categories', isAuthenticated, isAdmin, removeCategoriesFromProduct); 
+
 export default router;

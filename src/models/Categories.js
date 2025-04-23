@@ -11,7 +11,7 @@ export default class Categories extends Model {
       primaryKey: true
     },
     CategoryName: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(255),
       allowNull: false
     },
     Description: {
@@ -33,13 +33,6 @@ export default class Categories extends Model {
         using: "BTREE",
         fields: [
           { name: "CategoryID" },
-        ]
-      },
-      {
-        name: "idx_category_name",
-        using: "BTREE",
-        fields: [
-          { name: "CategoryName" },
         ]
       },
     ]
