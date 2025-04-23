@@ -2,7 +2,7 @@ import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
 
 const models = initModels(sequelize);
-const { Products, Categories, Notifications } = models;
+const { Products, Categories, Notification } = models;
 
 // Thêm sản phẩm mới
 export const addProduct = async (req, res) => {
@@ -68,7 +68,7 @@ export const addProduct = async (req, res) => {
     await product.addCategories(categories, { transaction });
 
     // Tạo thông báo cho tất cả người dùng
-    await Notifications.create(
+    await Notification.create(
       {
         UserID: null, // Thông báo chung
         Title: "Sản phẩm mới tại Cholimex!",

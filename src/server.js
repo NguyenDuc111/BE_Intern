@@ -11,6 +11,7 @@ import OrderRoute from "./routes/OrderRoute.js";
 import ReviewRoute from "./routes/ReviewRoute.js";
 import NotificationRoute from "./routes/NotificationRoute.js";
 import WishlistRoute from "./routes/WishlistRoute.js";
+import PromotionRoute from "./routes/PromotionRoute.js";
 
 dotenv.config();
 
@@ -21,14 +22,15 @@ app.use(express.json());
 app.use(errorHandler);
 
 //routes
-app.use(productRoute);
-app.use(cartRoute);
 app.use(AuthRoute);
-app.use(UserRoute);
+app.use(cartRoute);
 app.use(CategoryRoute);
-app.use(OrderRoute);
-app.use(ReviewRoute);
 app.use(NotificationRoute);
+app.use(OrderRoute);
+app.use(productRoute);
+app.use(PromotionRoute);
+app.use(ReviewRoute);
+app.use(UserRoute);
 app.use(WishlistRoute);
 
 app.listen(8080);

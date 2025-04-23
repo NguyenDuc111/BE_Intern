@@ -1,17 +1,19 @@
 import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
+import Sequelize from "sequelize";
 
 const models = initModels(sequelize);
-const { Notifications } = models;
+const { Notification, Users } = models;
+const { Op } = Sequelize;
 
 // Lấy danh sách thông báo
 export const getNotifications = async (req, res) => {
   try {
     const { UserID } = req.user;
 
-    const notifications = await Notifications.findAll({
+    const notifications = await Notification.findAll({
       where: {
-        [models.Sequelize.Op.or]: [{ UserID }, { UserID: null }],
+        [Op.or]: [{ UserID }, { UserID: null }], 
       },
       attributes: ["NotificationID", "Title", "Message", "IsRead", "CreatedAt"],
       order: [["CreatedAt", "DESC"]],
@@ -32,18 +34,18 @@ export const markNotificationAsRead = async (req, res) => {
     const { id } = req.params;
     const { UserID } = req.user;
 
-    const notification = await Notifications.findByPk(id, { transaction });
-    if (!notification) {
+    const notifications = await Notification.findByPk(id, { transaction });
+    if (!notifications) {
       await transaction.rollback();
       return res.status(404).json({ error: "Notification not found." });
     }
 
-    if (notification.UserID !== null && notification.UserID !== UserID) {
+    if (notifications.UserID !== null && notifications.UserID !== UserID) {
       await transaction.rollback();
       return res.status(403).json({ error: "Access denied." });
     }
 
-    await notification.update({ IsRead: true }, { transaction });
+    await notifications.update({ IsRead: true }, { transaction });
 
     await transaction.commit();
     res.status(200).json({ message: "Notification marked as read." });
@@ -61,7 +63,7 @@ export const createNotification = async (req, res) => {
   try {
     const { UserID, Title, Message } = req.body;
 
-    const notification = await Notifications.create(
+    const notification = await Notification.create(
       { UserID, Title, Message, IsRead: false },
       { transaction }
     );
@@ -81,7 +83,7 @@ export const createNotification = async (req, res) => {
 // Xem danh sách thông báo
 export const getAllNotifications = async (req, res) => {
   try {
-    const notifications = await Notifications.findAll({
+    const notification = await Notification.findAll({
       include: [
         {
           model: Users,
@@ -92,7 +94,7 @@ export const getAllNotifications = async (req, res) => {
       ],
       attributes: ["NotificationID", "Title", "Message", "IsRead", "CreatedAt"],
     });
-    res.status(200).json(notifications);
+    res.status(200).json(notification);
   } catch (error) {
     res
       .status(500)
@@ -106,7 +108,7 @@ export const deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const notification = await Notifications.findByPk(id, { transaction });
+    const notification = await Notification.findByPk(id, { transaction });
     if (!notification) {
       await transaction.rollback();
       return res.status(404).json({ error: "Notification not found." });
