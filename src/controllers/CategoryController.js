@@ -4,27 +4,33 @@ import initModels from "../models/init-models.js";
 const models = initModels(sequelize);
 const { Categories, Products } = models;
 
-// Xem danh sách danh mục
+// Lấy danh sách danh mục
 export const getAllCategories = async (req, res) => {
   try {
     const categories = await Categories.findAll({
-      include: [
-        {
-          model: Products,
-          as: "Products",
-          through: { attributes: [] },
-          attributes: ["ProductID", "ProductName"],
-        },
-      ],
       attributes: [
         "CategoryID",
         "CategoryName",
         "Description",
         "ImageURL",
-        "CreatedAt",
-        "UpdatedAt",
+        "createdAt",
+        "updatedAt",
+        [
+          sequelize.fn("COUNT", sequelize.col("Products.ProductID")),
+          "productCount",
+        ],
       ],
+      include: [
+        {
+          model: Products,
+          as: "Products",
+          attributes: [], // Không lấy dữ liệu sản phẩm, chỉ dùng để đếm
+          through: { attributes: [] },
+        },
+      ],
+      group: ["Categories.CategoryID"], // Nhóm theo CategoryID để đếm đúng
     });
+
     res.status(200).json(categories);
   } catch (error) {
     res.status(500).json({ error: `Get categories error: ${error.message}` });
