@@ -19,7 +19,7 @@ CREATE TABLE `Cart` (
   KEY `idx_product_id` (`ProductID`),
   CONSTRAINT `Cart_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`) ON DELETE CASCADE,
   CONSTRAINT `Cart_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Categories`;
 CREATE TABLE `Categories` (
@@ -31,7 +31,7 @@ CREATE TABLE `Categories` (
   `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`CategoryID`),
   KEY `idx_category_name` (`CategoryName`)
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `OrderDetails`;
 CREATE TABLE `OrderDetails` (
@@ -45,7 +45,7 @@ CREATE TABLE `OrderDetails` (
   KEY `idx_product_id` (`ProductID`),
   CONSTRAINT `OrderDetails_ibfk_1` FOREIGN KEY (`OrderID`) REFERENCES `Orders` (`OrderID`) ON DELETE CASCADE,
   CONSTRAINT `OrderDetails_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Orders`;
 CREATE TABLE `Orders` (
@@ -59,7 +59,7 @@ CREATE TABLE `Orders` (
   KEY `idx_user_id` (`UserID`),
   KEY `idx_status` (`Status`),
   CONSTRAINT `Orders_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Products`;
 CREATE TABLE `Products` (
@@ -76,6 +76,22 @@ CREATE TABLE `Products` (
   KEY `idx_product_name` (`ProductName`),
   KEY `idx_category_id` (`CategoryID`),
   CONSTRAINT `Products_ibfk_1` FOREIGN KEY (`CategoryID`) REFERENCES `Categories` (`CategoryID`) ON DELETE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+DROP TABLE IF EXISTS `Promotions`;
+CREATE TABLE `Promotions` (
+  `PromotionID` int NOT NULL AUTO_INCREMENT,
+  `ProductID` int NOT NULL,
+  `DiscountPercentage` decimal(5,2) NOT NULL,
+  `StartDate` date NOT NULL,
+  `EndDate` date NOT NULL,
+  `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`PromotionID`),
+  KEY `idx_product_id` (`ProductID`),
+  CONSTRAINT `Promotions_ibfk_1` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE CASCADE,
+  CONSTRAINT `Promotions_chk_1` CHECK (((`DiscountPercentage` >= 0) and (`DiscountPercentage` <= 100))),
+  CONSTRAINT `Promotions_chk_2` CHECK ((`EndDate` >= `StartDate`))
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `ResetTokens`;
@@ -91,6 +107,23 @@ CREATE TABLE `ResetTokens` (
   CONSTRAINT `ResetTokens_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+DROP TABLE IF EXISTS `Reviews`;
+CREATE TABLE `Reviews` (
+  `ReviewID` int NOT NULL AUTO_INCREMENT,
+  `UserID` int NOT NULL,
+  `ProductID` int NOT NULL,
+  `Rating` int NOT NULL,
+  `Comment` text,
+  `CreatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `UpdatedAt` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`ReviewID`),
+  KEY `idx_user_id` (`UserID`),
+  KEY `idx_product_id` (`ProductID`),
+  CONSTRAINT `Reviews_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`) ON DELETE CASCADE,
+  CONSTRAINT `Reviews_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE CASCADE,
+  CONSTRAINT `Reviews_chk_1` CHECK (((`Rating` >= 1) and (`Rating` <= 5)))
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 DROP TABLE IF EXISTS `Roles`;
 CREATE TABLE `Roles` (
   `RoleID` int NOT NULL AUTO_INCREMENT,
@@ -101,7 +134,7 @@ CREATE TABLE `Roles` (
   PRIMARY KEY (`RoleID`),
   UNIQUE KEY `RoleName` (`RoleName`),
   KEY `idx_role_name` (`RoleName`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Users`;
 CREATE TABLE `Users` (
@@ -119,7 +152,7 @@ CREATE TABLE `Users` (
   KEY `idx_email` (`Email`),
   KEY `idx_role_id` (`RoleID`),
   CONSTRAINT `Users_ibfk_1` FOREIGN KEY (`RoleID`) REFERENCES `Roles` (`RoleID`) ON DELETE RESTRICT
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `Cart` (`CartID`, `UserID`, `ProductID`, `Quantity`, `AddedAt`) VALUES
 (1, 1, 1, 2, '2025-04-22 07:50:18'),
@@ -141,7 +174,21 @@ INSERT INTO `Products` (`ProductID`, `CategoryID`, `ProductName`, `Description`,
 (3, 2, 'Nước mắm Cholimex 500ml', 'Nước mắm nguyên chất, thượng hạng, đậm đà hương vị biển', '25000.00', 50, '/images/nuoc-mam-500ml.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
 (4, 2, 'Nước mắm Cholimex 1L', 'Nước mắm cao cấp, dung tích lớn, tiết kiệm chi phí', '45000.00', 30, '/images/nuoc-mam-1l.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
 (5, 3, 'Hạt nêm Cholimex 200g', 'Hạt nêm đậm đà, tăng hương vị cho món canh và xào', '20000.00', 80, '/images/hat-nem-200g.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
-(6, 4, 'Sốt mayonnaise Cholimex 130g', 'Sốt mayonnaise béo ngậy, dùng cho salad và bánh mì', '18000.00', 60, '/images/mayonnaise-130g.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18');
+(6, 4, 'Sốt mayonnaise Cholimex 130g', 'Sốt mayonnaise béo ngậy, dùng cho salad và bánh mì', '18000.00', 60, '/images/mayonnaise-130g.jpg', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
+(7, 1, 'Tương ớt Cholimex 250g', 'Tương ớt cay nồng, hương vị đậm đà, phù hợp chấm và nấu ăn', '15000.00', 100, '/images/tuong-ot-250g.jpg', '2025-04-23 01:23:32', '2025-04-23 01:23:32'),
+(8, 1, 'Tương ớt Cholimex 500g', 'Tương ớt cay, dung tích lớn, dùng cho gia đình', '28000.00', 50, '/images/tuong-ot-500g.jpg', '2025-04-23 01:23:32', '2025-04-23 01:23:32'),
+(9, 2, 'Nước mắm Cholimex 500ml', 'Nước mắm nguyên chất, thượng hạng, đậm đà hương vị biển', '25000.00', 50, '/images/nuoc-mam-500ml.jpg', '2025-04-23 01:23:32', '2025-04-23 01:23:32'),
+(10, 2, 'Nước mắm Cholimex 1L', 'Nước mắm cao cấp, dung tích lớn, tiết kiệm chi phí', '45000.00', 30, '/images/nuoc-mam-1l.jpg', '2025-04-23 01:23:32', '2025-04-23 01:23:32'),
+(11, 3, 'Hạt nêm Cholimex 200g', 'Hạt nêm đậm đà, tăng hương vị cho món canh và xào', '20000.00', 80, '/images/hat-nem-200g.jpg', '2025-04-23 01:23:32', '2025-04-23 01:23:32'),
+(12, 4, 'Sốt mayonnaise Cholimex 130g', 'Sốt mayonnaise béo ngậy, dùng cho salad và bánh mì', '18000.00', 60, '/images/mayonnaise-130g.jpg', '2025-04-23 01:23:32', '2025-04-23 01:23:32');
+INSERT INTO `Promotions` (`PromotionID`, `ProductID`, `DiscountPercentage`, `StartDate`, `EndDate`, `CreatedAt`, `UpdatedAt`) VALUES
+(1, 1, '10.00', '2025-04-01', '2025-04-30', '2025-04-23 01:22:29', '2025-04-23 01:22:29'),
+(2, 3, '15.00', '2025-05-01', '2025-05-15', '2025-04-23 01:22:29', '2025-04-23 01:22:29'),
+(3, 5, '5.00', '2025-04-15', '2025-04-20', '2025-04-23 01:22:29', '2025-04-23 01:22:29'),
+(4, 1, '10.00', '2025-04-01', '2025-04-30', '2025-04-23 01:23:32', '2025-04-23 01:23:32'),
+(5, 3, '15.00', '2025-05-01', '2025-05-15', '2025-04-23 01:23:32', '2025-04-23 01:23:32'),
+(6, 5, '5.00', '2025-04-15', '2025-04-20', '2025-04-23 01:23:32', '2025-04-23 01:23:32');
+
 
 INSERT INTO `Roles` (`RoleID`, `RoleName`, `Description`, `CreatedAt`, `UpdatedAt`) VALUES
 (1, 'user', 'Người dùng thông thường, có thể mua sắm và quản lý đơn hàng cá nhân', '2025-04-22 07:50:18', '2025-04-22 07:50:18'),
