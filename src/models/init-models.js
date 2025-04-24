@@ -81,7 +81,7 @@ export default function initModels(sequelize) {
   LoyaltyPoints.belongsTo(Users, { as: "User", foreignKey: "UserID" });
   Users.hasMany(LoyaltyPoints, { as: "LoyaltyPoints", foreignKey: "UserID" });
   Notification.belongsTo(Users, { as: "User", foreignKey: "UserID" });
-  Users.hasMany(Notification, { as: "Notification", foreignKey: "UserID" });
+  Users.hasMany(Notification, { as: "Notifications", foreignKey: "UserID" });
   Orders.belongsTo(Users, { as: "User", foreignKey: "UserID" });
   Users.hasMany(Orders, { as: "Orders", foreignKey: "UserID" });
   ResetToken.belongsTo(Users, { as: "User", foreignKey: "UserID" });
