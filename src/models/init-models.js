@@ -12,6 +12,7 @@ import _Promotion from "./Promotion.js";
 import _ResetToken from "./ResetToken.js";
 import _Reviews from "./Reviews.js";
 import _Roles from "./Roles.js";
+import _TempOrderItems from "./TempOrderItems.js";
 import _Users from "./Users.js";
 import _Wishlists from "./Wishlists.js";
 
@@ -28,6 +29,7 @@ export default function initModels(sequelize) {
   const ResetToken = _ResetToken.init(sequelize, DataTypes);
   const Reviews = _Reviews.init(sequelize, DataTypes);
   const Roles = _Roles.init(sequelize, DataTypes);
+  const TempOrderItems = _TempOrderItems.init(sequelize, DataTypes);
   const Users = _Users.init(sequelize, DataTypes);
   const Wishlists = _Wishlists.init(sequelize, DataTypes);
 
@@ -53,6 +55,11 @@ export default function initModels(sequelize) {
   });
   OrderDetails.belongsTo(Orders, { as: "Order", foreignKey: "OrderID" });
   Orders.hasMany(OrderDetails, { as: "OrderDetails", foreignKey: "OrderID" });
+  TempOrderItems.belongsTo(Orders, { as: "Order", foreignKey: "OrderID" });
+  Orders.hasMany(TempOrderItems, {
+    as: "TempOrderItems",
+    foreignKey: "OrderID",
+  });
   Cart.belongsTo(Products, { as: "Product", foreignKey: "ProductID" });
   Products.hasMany(Cart, { as: "Carts", foreignKey: "ProductID" });
   OrderDetails.belongsTo(Products, { as: "Product", foreignKey: "ProductID" });
@@ -70,6 +77,14 @@ export default function initModels(sequelize) {
   });
   Reviews.belongsTo(Products, { as: "Product", foreignKey: "ProductID" });
   Products.hasMany(Reviews, { as: "Reviews", foreignKey: "ProductID" });
+  TempOrderItems.belongsTo(Products, {
+    as: "Product",
+    foreignKey: "ProductID",
+  });
+  Products.hasMany(TempOrderItems, {
+    as: "TempOrderItems",
+    foreignKey: "ProductID",
+  });
   Wishlists.belongsTo(Products, { as: "Product", foreignKey: "ProductID" });
   Products.hasMany(Wishlists, { as: "Wishlists", foreignKey: "ProductID" });
   Orders.belongsTo(Promotion, { as: "Promotion", foreignKey: "PromotionID" });
@@ -104,6 +119,7 @@ export default function initModels(sequelize) {
     ResetToken,
     Reviews,
     Roles,
+    TempOrderItems,
     Users,
     Wishlists,
   };

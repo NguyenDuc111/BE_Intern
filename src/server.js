@@ -13,7 +13,7 @@ import NotificationRoute from "./routes/NotificationRoute.js";
 import WishlistRoute from "./routes/WishlistRoute.js";
 import PromotionRoute from "./routes/PromotionRoute.js";
 import LoyaltyRoute from "./routes/LoyaltyRoute.js";
-
+import StatisticsRoute from "./routes/StatisticsRoute.js";
 dotenv.config();
 
 const app = express();
@@ -34,5 +34,7 @@ app.use(ReviewRoute);
 app.use(UserRoute);
 app.use(WishlistRoute);
 app.use(LoyaltyRoute);
+app.use(StatisticsRoute);
+
 
 app.listen(8080);

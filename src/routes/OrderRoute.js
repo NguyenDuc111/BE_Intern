@@ -6,6 +6,8 @@ import {
   updateOrder,
   deleteOrder,
   completeOrder,
+  processPayment,
+  vnpayCallback,
 } from "../controllers/OrderController.js";
 import { isAuthenticated, isAdmin } from "../middleware/auth.js";
 
@@ -23,5 +25,8 @@ router.put("/order-update/:id", isAuthenticated, updateOrder);
 router.delete("/order-del/:id", isAuthenticated, isAdmin, deleteOrder);
 //endpoint
 router.post("/order/:id/complete", isAuthenticated, isAdmin, completeOrder);
-
+// Xử lý thanh toán
+router.post("/payment", isAuthenticated, processPayment);
+// Callback từ VNPay
+router.get("/vnpay/callback", vnpayCallback);
 export default router;

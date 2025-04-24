@@ -74,7 +74,7 @@ CREATE TABLE `OrderDetails` (
   KEY `ProductID` (`ProductID`),
   CONSTRAINT `OrderDetails_ibfk_1` FOREIGN KEY (`OrderID`) REFERENCES `Orders` (`OrderID`) ON DELETE CASCADE,
   CONSTRAINT `OrderDetails_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Orders`;
 CREATE TABLE `Orders` (
@@ -226,18 +226,27 @@ INSERT INTO `Notification` (`NotificationID`, `UserID`, `Title`, `Message`, `IsR
 INSERT INTO `OrderDetails` (`OrderDetailID`, `OrderID`, `ProductID`, `Quantity`, `UnitPrice`, `createdAt`, `updatedAt`) VALUES
 (1, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
 (2, 1, 2, 1, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(3, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32');
+(3, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(4, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(5, 1, 2, 1, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(6, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(7, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(8, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(9, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(10, 1, 2, 1, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(11, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(12, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(13, 1, 2, 1, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(14, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32');
 INSERT INTO `Orders` (`OrderID`, `UserID`, `PromotionID`, `TotalAmount`, `Status`, `ShippingAddress`, `createdAt`, `updatedAt`) VALUES
 (1, 2, 1, '125000.00', 'Pending', '456 Đường Lê Lợi, TP.HCM', '2025-04-23 06:33:31', '2025-04-23 06:33:31'),
 (2, 3, NULL, '75000.00', 'Shipped', '789 Đường Nguyễn Huệ, TP.HCM', '2025-04-23 06:33:31', '2025-04-23 06:33:31');
 INSERT INTO `ProductCategories` (`ProductID`, `CategoryID`, `createdAt`, `updatedAt`) VALUES
-(1, 1, '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
-(2, 2, '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
-(2, 3, '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
-(3, 3, '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
-(4, 4, '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
-(9, 1, '2025-04-23 06:57:53', '2025-04-23 06:57:53'),
-(10, 1, '2025-04-23 07:30:48', '2025-04-23 07:30:48');
+(1, 1, '2025-04-24 03:09:45', '2025-04-24 03:09:45'),
+(2, 2, '2025-04-24 03:09:45', '2025-04-24 03:09:45'),
+(2, 3, '2025-04-24 03:09:45', '2025-04-24 03:09:45'),
+(3, 3, '2025-04-24 03:09:45', '2025-04-24 03:09:45'),
+(4, 4, '2025-04-24 03:09:45', '2025-04-24 03:09:45');
 INSERT INTO `Products` (`ProductID`, `ProductName`, `Description`, `Price`, `StockQuantity`, `ImageURL`, `createdAt`, `updatedAt`) VALUES
 (1, 'Nước mắm Cholimex 750ml', 'Nước mắm nguyên chất, đậm đà', '45000.00', 100, '/images/nuoc-mam-750ml.jpg', '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
 (2, 'Tương ớt Cholimex 750g', 'Tương ớt cay nồng, dung tích lớn', '35000.00', 50, '/images/tuong-ot-750g.jpg', '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
