@@ -35,11 +35,9 @@ export const addToCart = async (req, res) => {
     const totalQuantity = currentQuantity + Quantity;
     if (totalQuantity > product.StockQuantity) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({
-          error: `Not enough stock for ${product.ProductName}. Available: ${product.StockQuantity}, Requested: ${totalQuantity}.`,
-        });
+      return res.status(400).json({
+        error: `Not enough stock for ${product.ProductName}. Available: ${product.StockQuantity}, Requested: ${totalQuantity}.`,
+      });
     }
 
     // Thêm hoặc cập nhật giỏ hàng
@@ -118,11 +116,9 @@ export const updateCart = async (req, res) => {
     });
     if (Quantity > product.StockQuantity) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({
-          error: `Not enough stock for ${product.ProductName}. Available: ${product.StockQuantity}, Requested: ${Quantity}.`,
-        });
+      return res.status(400).json({
+        error: `Not enough stock for ${product.ProductName}. Available: ${product.StockQuantity}, Requested: ${Quantity}.`,
+      });
     }
 
     await cartItem.update({ Quantity }, { transaction });

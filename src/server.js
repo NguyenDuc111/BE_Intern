@@ -12,6 +12,7 @@ import ReviewRoute from "./routes/ReviewRoute.js";
 import NotificationRoute from "./routes/NotificationRoute.js";
 import WishlistRoute from "./routes/WishlistRoute.js";
 import PromotionRoute from "./routes/PromotionRoute.js";
+import LoyaltyRoute from "./routes/LoyaltyRoute.js";
 
 dotenv.config();
 
@@ -32,5 +33,6 @@ app.use(PromotionRoute);
 app.use(ReviewRoute);
 app.use(UserRoute);
 app.use(WishlistRoute);
+app.use(LoyaltyRoute);
 
 app.listen(8080);

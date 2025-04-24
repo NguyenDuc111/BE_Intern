@@ -10,7 +10,7 @@ export const createOrder = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const { UserID } = req.user;
-    const { items, pointsUsed, promotionId, cartItemIds } = req.body; // items: [{ ProductID, Quantity }], cartItemIds: [CartID]
+    const { items, pointsUsed, promotionId, cartItemIds } = req.body;
 
     // Kiểm tra items
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -32,11 +32,9 @@ export const createOrder = async (req, res) => {
       }
       if (product.StockQuantity < item.Quantity) {
         await transaction.rollback();
-        return res
-          .status(400)
-          .json({
-            error: `Not enough stock for ${product.ProductName}. Available: ${product.StockQuantity}, Requested: ${item.Quantity}.`,
-          });
+        return res.status(400).json({
+          error: `Not enough stock for ${product.ProductName}. Available: ${product.StockQuantity}, Requested: ${item.Quantity}.`,
+        });
       }
       totalAmount += product.Price * item.Quantity;
     }
@@ -53,7 +51,7 @@ export const createOrder = async (req, res) => {
         await transaction.rollback();
         return res.status(400).json({ error: "Not enough points." });
       }
-      discountFromPoints = pointsUsed * 1000; // 1 điểm = 1,000 VND
+      discountFromPoints = pointsUsed * 1000;
       await LoyaltyPoints.create(
         {
           UserID,

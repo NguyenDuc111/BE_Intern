@@ -24,11 +24,11 @@ export const getAllCategories = async (req, res) => {
         {
           model: Products,
           as: "Products",
-          attributes: [], // Không lấy dữ liệu sản phẩm, chỉ dùng để đếm
+          attributes: [],
           through: { attributes: [] },
         },
       ],
-      group: ["Categories.CategoryID"], // Nhóm theo CategoryID để đếm đúng
+      group: ["Categories.CategoryID"],
     });
 
     res.status(200).json(categories);
