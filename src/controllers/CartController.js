@@ -76,7 +76,7 @@ export const getCart = async (req, res) => {
         {
           model: Products,
           as: "Product",
-          attributes: ["ProductID", "ProductName", "Price", "ImageURL"],
+          attributes: ["ProductID", "ProductName", "Price", "ImageURL","StockQuantity"],
         },
       ],
       attributes: ["CartID", "ProductID", "Quantity"],
