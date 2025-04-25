@@ -23,7 +23,7 @@ router.get("/order/:id", isAuthenticated, getOrderById);
 router.put("/order-update/:id", isAuthenticated, updateOrder);
 //endpoint xóa đơn hàng (admin)
 router.delete("/order-del/:id", isAuthenticated, isAdmin, deleteOrder);
-//endpoint
+//endpoint đơn hàng thành công
 router.post("/order/:id/complete", isAuthenticated, isAdmin, completeOrder);
 // Xử lý thanh toán
 router.post("/payment", isAuthenticated, processPayment);

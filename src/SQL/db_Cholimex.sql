@@ -74,7 +74,7 @@ CREATE TABLE `OrderDetails` (
   KEY `ProductID` (`ProductID`),
   CONSTRAINT `OrderDetails_ibfk_1` FOREIGN KEY (`OrderID`) REFERENCES `Orders` (`OrderID`) ON DELETE CASCADE,
   CONSTRAINT `OrderDetails_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Orders`;
 CREATE TABLE `Orders` (
@@ -82,16 +82,16 @@ CREATE TABLE `Orders` (
   `UserID` int DEFAULT NULL,
   `PromotionID` int DEFAULT NULL,
   `TotalAmount` decimal(10,2) NOT NULL,
-  `Status` enum('Pending','Processing','Shipped','Delivered','Cancelled') DEFAULT 'Pending',
+  `Status` enum('Pending','Processing','Paid','Cancelled') DEFAULT 'Pending',
   `ShippingAddress` text,
-  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
-  `updatedAt` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `createdAt` datetime DEFAULT NULL,
+  `updatedAt` datetime DEFAULT NULL,
   PRIMARY KEY (`OrderID`),
   KEY `UserID` (`UserID`),
   KEY `PromotionID` (`PromotionID`),
   CONSTRAINT `Orders_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `Users` (`UserID`) ON DELETE SET NULL,
   CONSTRAINT `Orders_ibfk_2` FOREIGN KEY (`PromotionID`) REFERENCES `Promotion` (`PromotionID`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `ProductCategories`;
 CREATE TABLE `ProductCategories` (
@@ -174,6 +174,20 @@ CREATE TABLE `Roles` (
   UNIQUE KEY `RoleName` (`RoleName`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+DROP TABLE IF EXISTS `TempOrderItems`;
+CREATE TABLE `TempOrderItems` (
+  `TempID` int NOT NULL AUTO_INCREMENT,
+  `OrderID` int NOT NULL,
+  `ProductID` int NOT NULL,
+  `Quantity` int NOT NULL,
+  `createdAt` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`TempID`),
+  KEY `OrderID` (`OrderID`),
+  KEY `ProductID` (`ProductID`),
+  CONSTRAINT `TempOrderItems_ibfk_1` FOREIGN KEY (`OrderID`) REFERENCES `Orders` (`OrderID`),
+  CONSTRAINT `TempOrderItems_ibfk_2` FOREIGN KEY (`ProductID`) REFERENCES `Products` (`ProductID`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 DROP TABLE IF EXISTS `Users`;
 CREATE TABLE `Users` (
   `UserID` int NOT NULL AUTO_INCREMENT,
@@ -189,7 +203,7 @@ CREATE TABLE `Users` (
   UNIQUE KEY `Email` (`Email`),
   KEY `RoleID` (`RoleID`),
   CONSTRAINT `Users_ibfk_1` FOREIGN KEY (`RoleID`) REFERENCES `Roles` (`RoleID`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 DROP TABLE IF EXISTS `Wishlists`;
 CREATE TABLE `Wishlists` (
@@ -206,8 +220,6 @@ CREATE TABLE `Wishlists` (
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 INSERT INTO `Cart` (`CartID`, `UserID`, `ProductID`, `Quantity`, `createdAt`, `updatedAt`) VALUES
-(1, 2, 1, 2, '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
-(2, 2, 2, 1, '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
 (3, 3, 3, 3, '2025-04-23 06:31:25', '2025-04-23 06:31:25');
 INSERT INTO `Categories` (`CategoryID`, `CategoryName`, `Description`, `ImageURL`, `createdAt`, `updatedAt`) VALUES
 (1, 'Nước mắm', 'Các loại nước mắm cao cấp từ Cholimex', '/images/nuoc-mam.jpg', '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
@@ -224,23 +236,12 @@ INSERT INTO `Notification` (`NotificationID`, `UserID`, `Title`, `Message`, `IsR
 (4, 3, 'Sản phẩm mới tại Cholimex!', 'Sản phẩm mới: Nước mắm Cholimex 500ml đã có mặt tại Cholimex!', 0, '2025-04-23 06:57:53', '2025-04-23 07:33:10'),
 (5, 5, 'Sản phẩm mới tại Cholimex!', 'Sản phẩm mới: Nước mắm Cholimex 100ml đã có mặt tại Cholimex!', 0, '2025-04-23 07:30:48', '2025-04-23 07:32:55');
 INSERT INTO `OrderDetails` (`OrderDetailID`, `OrderID`, `ProductID`, `Quantity`, `UnitPrice`, `createdAt`, `updatedAt`) VALUES
-(1, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(2, 1, 2, 1, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(3, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(4, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(5, 1, 2, 1, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(6, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(7, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(8, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(9, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(10, 1, 2, 1, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(11, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(12, 2, 3, 3, '25000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(13, 1, 2, 1, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
-(14, 1, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32');
+(15, 3, 1, 2, '45000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32'),
+(16, 3, 2, 2, '35000.00', '2025-04-23 06:33:32', '2025-04-23 06:33:32');
 INSERT INTO `Orders` (`OrderID`, `UserID`, `PromotionID`, `TotalAmount`, `Status`, `ShippingAddress`, `createdAt`, `updatedAt`) VALUES
-(1, 2, 1, '125000.00', 'Pending', '456 Đường Lê Lợi, TP.HCM', '2025-04-23 06:33:31', '2025-04-23 06:33:31'),
-(2, 3, NULL, '75000.00', 'Shipped', '789 Đường Nguyễn Huệ, TP.HCM', '2025-04-23 06:33:31', '2025-04-23 06:33:31');
+(3, 2, 1, '160000.00', 'Paid', '123 Đường Vĩnh Lộc, TP.HCM', '2025-04-23 06:33:31', '2025-04-23 06:33:31'),
+(4, 5, 1, '160000.00', 'Pending', '123 Đường Vĩnh Lộc, TP.HCM', '2025-04-23 06:33:31', '2025-04-23 06:33:31'),
+(18, 5, 1, '112500.00', 'Processing', '123 Đường Lê Lợi, TP.HCM', '2025-04-24 07:36:03', '2025-04-24 07:54:27');
 INSERT INTO `ProductCategories` (`ProductID`, `CategoryID`, `createdAt`, `updatedAt`) VALUES
 (1, 1, '2025-04-24 03:09:45', '2025-04-24 03:09:45'),
 (2, 2, '2025-04-24 03:09:45', '2025-04-24 03:09:45'),
@@ -265,12 +266,16 @@ INSERT INTO `Reviews` (`ReviewID`, `UserID`, `ProductID`, `Rating`, `Comment`, `
 INSERT INTO `Roles` (`RoleID`, `RoleName`, `Description`, `createdAt`, `updatedAt`) VALUES
 (1, 'admin', 'Quản trị viên hệ thống', '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
 (2, 'user', 'Người dùng thông thường', '2025-04-23 06:31:25', '2025-04-23 06:31:25');
+INSERT INTO `TempOrderItems` (`TempID`, `OrderID`, `ProductID`, `Quantity`, `createdAt`) VALUES
+(1, 18, 1, 2, '2025-04-24 07:36:03'),
+(2, 18, 2, 1, '2025-04-24 07:36:03');
 INSERT INTO `Users` (`UserID`, `RoleID`, `FullName`, `Email`, `Password`, `Phone`, `Address`, `createdAt`, `updatedAt`) VALUES
 (1, 1, 'Admin User', 'admin@example.com', '$2a$10$zX8k8g7f8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p', '0901234567', '123 Đường Vĩnh Lộc, TP.HCM', '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
 (2, 2, 'John Doe', 'user1@example.com', '$2a$10$zX8k8g7f8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p', '0908765432', '456 Đường Lê Lợi, TP.HCM', '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
 (3, 2, 'Jane Smith', 'user2@example.com', '$2a$10$zX8k8g7f8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p5mX8Qz7p', '0912345678', '789 Đường Nguyễn Huệ, TP.HCM', '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
 (4, 1, 'admin', 'admin@gmail.com', '$2b$10$r1A8fs7/CcoxI9IHeGnJFe/ZrQx0eRqvpQ0Nv.kVrkmOtQuab8Som', '123456789', 'HCM', '2025-04-23 06:48:36', '2025-04-23 06:51:49'),
-(5, 2, 'test', 'test@gmail.com', '$2b$10$r1A8fs7/CcoxI9IHeGnJFe/ZrQx0eRqvpQ0Nv.kVrkmOtQuab8Som', '123456789', 'HCM', '2025-04-23 06:48:36', '2025-04-23 06:51:49');
+(5, 2, 'test', 'test@gmail.com', '$2b$10$r1A8fs7/CcoxI9IHeGnJFe/ZrQx0eRqvpQ0Nv.kVrkmOtQuab8Som', '123456789', 'HCM', '2025-04-23 06:48:36', '2025-04-23 06:51:49'),
+(6, 2, 'nguoidung', 'nguoidung@gmail.com', '$2b$10$vGOIO91SdG6xiEML1HDNfuNbecjzjNxOjZMYMz44C4EzOD8bZ5F0u', '123456789', 'HCM', '2025-04-25 01:26:46', '2025-04-25 01:29:33');
 INSERT INTO `Wishlists` (`WishlistID`, `UserID`, `ProductID`, `createdAt`, `updatedAt`) VALUES
 (1, 2, 3, '2025-04-23 06:31:25', '2025-04-23 06:31:25'),
 (2, 3, 4, '2025-04-23 06:31:25', '2025-04-23 06:31:25');

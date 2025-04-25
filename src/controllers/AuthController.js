@@ -9,7 +9,7 @@ import nodemailer from "nodemailer";
 dotenv.config();
 
 const models = initModels(sequelize);
-const { Users, Roles, ResetTokens } = models;
+const { Users, Roles, ResetToken } = models;
 
 // Cấu hình Nodemailer
 const transporter = nodemailer.createTransport({
@@ -20,10 +20,43 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Hàm validate dữ liệu
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password) => {
+  const passwordRegex = /^\d{6,}$/;
+  return passwordRegex.test(password);
+};
+
+const validatePhone = (phone) => {
+  const phoneRegex = /^\d+$/;
+  return phoneRegex.test(phone);
+};
+
+const validateFullName = (fullName) => {
+  const fullNameRegex = /^[A-Za-z\s]+$/;
+  return fullNameRegex.test(fullName);
+};
+
 // Đăng nhập
 export const login = async (req, res) => {
   try {
     const { Email, Password } = req.body;
+
+    // Validate email
+    if (!Email || !validateEmail(Email)) {
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    // Validate password
+    if (!Password || !validatePassword(Password)) {
+      return res.status(400).json({
+        error: "Password must be at least 6 digits and contain only numbers.",
+      });
+    }
 
     // Kiểm tra email
     const user = await Users.findOne({
@@ -46,9 +79,9 @@ export const login = async (req, res) => {
       {
         UserID: user.UserID,
         Email: user.Email,
-        FullName:user.FullName,
-        Phone:user.Phone,
-        Address:user.Address,
+        FullName: user.FullName,
+        Phone: user.Phone,
+        Address: user.Address,
         RoleName: user.Role.RoleName,
       },
       process.env.JWT_SECRET || "cholimex2025secret",
@@ -66,6 +99,36 @@ export const signup = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const { FullName, Email, Password, Phone, Address } = req.body;
+
+    // Validate FullName
+    if (!FullName || !validateFullName(FullName)) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "FullName must contain only letters and spaces." });
+    }
+
+    // Validate Email
+    if (!Email || !validateEmail(Email)) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
+    // Validate Password
+    if (!Password || !validatePassword(Password)) {
+      await transaction.rollback();
+      return res.status(400).json({
+        error: "Password must be at least 6 digits and contain only numbers.",
+      });
+    }
+
+    // Validate Phone
+    if (!Phone || !validatePhone(Phone)) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "Phone must contain only numbers." });
+    }
 
     // Kiểm tra email đã tồn tại
     const existingUser = await Users.findOne({ where: { Email }, transaction });
@@ -114,6 +177,12 @@ export const forgotPassword = async (req, res) => {
   try {
     const { Email } = req.body;
 
+    // Validate Email
+    if (!Email || !validateEmail(Email)) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Invalid email format." });
+    }
+
     // Kiểm tra email
     const user = await Users.findOne({ where: { Email }, transaction });
     if (!user) {
@@ -125,8 +194,8 @@ export const forgotPassword = async (req, res) => {
     const token = crypto.randomBytes(32).toString("hex");
     const expiresAt = new Date(Date.now() + 3600000); // Hết hạn sau 1 giờ
 
-    // Lưu token vào ResetTokens
-    await ResetTokens.create(
+    // Lưu token vào ResetToken
+    await ResetToken.create(
       {
         UserID: user.UserID,
         Token: token,
@@ -170,8 +239,17 @@ export const resetPassword = async (req, res) => {
   try {
     const { Token, NewPassword } = req.body;
 
+    // Validate NewPassword
+    if (!NewPassword || !validatePassword(NewPassword)) {
+      await transaction.rollback();
+      return res.status(400).json({
+        error:
+          "New password must be at least 6 digits and contain only numbers.",
+      });
+    }
+
     // Kiểm tra token
-    const resetToken = await ResetTokens.findOne({
+    const resetToken = await ResetToken.findOne({
       where: { Token },
       transaction,
     });
@@ -199,7 +277,7 @@ export const resetPassword = async (req, res) => {
     await user.update({ Password: hashedPassword }, { transaction });
 
     // Xóa token sau khi sử dụng
-    await ResetTokens.destroy({ where: { Token }, transaction });
+    await ResetToken.destroy({ where: { Token }, transaction });
 
     await transaction.commit();
     res.status(200).json({ message: "Password reset successfully." });
@@ -215,6 +293,24 @@ export const changePassword = async (req, res) => {
   try {
     const { OldPassword, NewPassword } = req.body;
     const { UserID } = req.user;
+
+    // Validate OldPassword
+    if (!OldPassword || !validatePassword(OldPassword)) {
+      await transaction.rollback();
+      return res.status(400).json({
+        error:
+          "Old password must be at least 6 digits and contain only numbers.",
+      });
+    }
+
+    // Validate NewPassword
+    if (!NewPassword || !validatePassword(NewPassword)) {
+      await transaction.rollback();
+      return res.status(400).json({
+        error:
+          "New password must be at least 6 digits and contain only numbers.",
+      });
+    }
 
     // Tìm người dùng
     const user = await Users.findByPk(UserID, { transaction });
