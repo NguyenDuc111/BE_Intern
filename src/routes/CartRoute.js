@@ -11,7 +11,7 @@ const router = express.Router();
 //endpoint thêm giỏ hàng
 router.post("/cart-add", isAuthenticated, addToCart);
 //endpoint lấy giỏ hàng theo ID người dùng
-router.get("/cart/:UserID", isAuthenticated, getCart);
+router.get("/cart", isAuthenticated, getCart);
 //endpoint chỉnh sửa giỏ hàng
 router.put("/edit/:cartId", isAuthenticated, updateCart);
 //endpoint xóa giỏ hàng
