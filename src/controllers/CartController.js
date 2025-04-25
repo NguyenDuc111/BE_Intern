@@ -71,7 +71,7 @@ export const getCart = async (req, res) => {
           attributes: ["ProductID", "ProductName", "Price", "ImageURL"],
         },
       ],
-      attributes: ["CartID", "ProductID", "Quantity", "AddedAt"],
+      attributes: ["CartID", "ProductID", "Quantity" ],
     });
 
     // Tính tổng giá trước giảm giá
