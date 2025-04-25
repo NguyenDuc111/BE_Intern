@@ -13,7 +13,7 @@ router.post("/cart-add", isAuthenticated, addToCart);
 //endpoint lấy giỏ hàng theo ID người dùng
 router.get("/cart", isAuthenticated, getCart);
 //endpoint chỉnh sửa giỏ hàng
-router.put("/edit/:cartId", isAuthenticated, updateCart);
+router.put("/cart-edit/:id", isAuthenticated, updateCart);
 //endpoint xóa giỏ hàng
 router.delete("/del/:cartId", isAuthenticated, deleteFromCart);
 export default router;

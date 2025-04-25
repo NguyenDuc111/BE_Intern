@@ -11,6 +11,14 @@ export const addToCart = async (req, res) => {
     const { UserID } = req.user;
     const { ProductID, Quantity } = req.body;
 
+    // Kiểm tra kiểu dữ liệu
+    if (!Number.isInteger(ProductID) || !Number.isInteger(Quantity)) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "ProductID and Quantity must be integers." });
+    }
+
     // Kiểm tra sản phẩm
     const product = await Products.findByPk(ProductID, { transaction });
     if (!product) {
@@ -71,7 +79,7 @@ export const getCart = async (req, res) => {
           attributes: ["ProductID", "ProductName", "Price", "ImageURL"],
         },
       ],
-      attributes: ["CartID", "ProductID", "Quantity" ],
+      attributes: ["CartID", "ProductID", "Quantity"],
     });
 
     // Tính tổng giá trước giảm giá
@@ -94,7 +102,22 @@ export const updateCart = async (req, res) => {
     const { id } = req.params;
     const { Quantity } = req.body;
 
-    const cartItem = await Cart.findByPk(id, { transaction });
+    // Kiểm tra kiểu dữ liệu của id và Quantity
+    const cartId = parseInt(id, 10);
+    if (isNaN(cartId)) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "Cart ID must be a valid integer." });
+    }
+
+    if (!Number.isInteger(Quantity)) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Quantity must be an integer." });
+    }
+
+    // Tìm bản ghi trong bảng Cart
+    const cartItem = await Cart.findByPk(cartId, { transaction });
     if (!cartItem || cartItem.UserID !== UserID) {
       await transaction.rollback();
       return res
@@ -110,21 +133,46 @@ export const updateCart = async (req, res) => {
         .json({ error: "Quantity must be greater than 0." });
     }
 
-    // Kiểm tra hàng tồn kho
+    // Tìm sản phẩm trong bảng Products
     const product = await Products.findByPk(cartItem.ProductID, {
       transaction,
     });
-    if (Quantity > product.StockQuantity) {
+    if (!product) {
       await transaction.rollback();
-      return res.status(400).json({
-        error: `Not enough stock for ${product.ProductName}. Available: ${product.StockQuantity}, Requested: ${Quantity}.`,
-      });
+      return res.status(404).json({ error: "Product not found." });
     }
 
+    // Kiểm tra hàng tồn kho dựa trên tổng số lượng (không chỉ delta)
+    const oldQuantity = cartItem.Quantity;
+    const deltaQuantity = Quantity - oldQuantity;
+
+    // Nếu tăng số lượng, kiểm tra xem có đủ hàng tồn kho không
+    if (deltaQuantity > 0) {
+      const availableStock = product.StockQuantity;
+      if (deltaQuantity > availableStock) {
+        await transaction.rollback();
+        return res.status(400).json({
+          error: `Not enough stock for ${product.ProductName}. Available: ${availableStock}, Requested additional: ${deltaQuantity}.`,
+        });
+      }
+    }
+
+    // Cập nhật số lượng trong giỏ hàng
     await cartItem.update({ Quantity }, { transaction });
 
+    // Cập nhật số lượng tồn kho trong bảng Products
+    product.StockQuantity -= deltaQuantity;
+    await product.save({ transaction });
+
     await transaction.commit();
-    res.status(200).json({ message: "Cart updated successfully." });
+    res.status(200).json({
+      message: "Cart updated successfully.",
+      cartItem: {
+        CartID: cartItem.CartID,
+        ProductID: cartItem.ProductID,
+        Quantity: cartItem.Quantity,
+      },
+    });
   } catch (error) {
     await transaction.rollback();
     res.status(500).json({ error: `Update cart error: ${error.message}` });
@@ -138,7 +186,15 @@ export const deleteFromCart = async (req, res) => {
     const { UserID } = req.user;
     const { id } = req.params;
 
-    const cartItem = await Cart.findByPk(id, { transaction });
+    const cartId = parseInt(id, 10);
+    if (isNaN(cartId)) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "Cart ID must be a valid integer." });
+    }
+
+    const cartItem = await Cart.findByPk(cartId, { transaction });
     if (!cartItem || cartItem.UserID !== UserID) {
       await transaction.rollback();
       return res
