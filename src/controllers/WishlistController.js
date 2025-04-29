@@ -15,7 +15,7 @@ export const addToWishlist = async (req, res) => {
     const product = await Products.findByPk(ProductID, { transaction });
     if (!product) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     // Kiểm tra sản phẩm đã có trong danh sách
@@ -25,7 +25,9 @@ export const addToWishlist = async (req, res) => {
     });
     if (existingWishlist) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Product already in wishlist." });
+      return res
+        .status(400)
+        .json({ error: "Sản phẩm đã có trong danh sách yêu thích." });
     }
 
     // Thêm vào danh sách
@@ -35,10 +37,16 @@ export const addToWishlist = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(201).json({ message: "Product added to wishlist.", wishlist });
+    res
+      .status(201)
+      .json({ message: "Đã thêm sản phẩm vào danh sách yêu thích.", wishlist });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Add to wishlist error: ${error.message}` });
+    res
+      .status(500)
+      .json({
+        error: `Lỗi khi thêm vào danh sách yêu thích: ${error.message}`,
+      });
   }
 };
 
@@ -61,7 +69,9 @@ export const getWishlist = async (req, res) => {
 
     res.status(200).json(wishlists);
   } catch (error) {
-    res.status(500).json({ error: `Get wishlist error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy danh sách yêu thích: ${error.message}` });
   }
 };
 
@@ -75,22 +85,28 @@ export const removeFromWishlist = async (req, res) => {
     const wishlist = await Wishlists.findByPk(id, { transaction });
     if (!wishlist) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Wishlist item not found." });
+      return res
+        .status(404)
+        .json({ error: "Không tìm thấy sản phẩm trong danh sách yêu thích." });
     }
 
     if (wishlist.UserID !== UserID) {
       await transaction.rollback();
-      return res.status(403).json({ error: "Access denied." });
+      return res.status(403).json({ error: "Không có quyền truy cập." });
     }
 
     await wishlist.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Product removed from wishlist." });
+    res
+      .status(200)
+      .json({ message: "Đã xóa sản phẩm khỏi danh sách yêu thích." });
   } catch (error) {
     await transaction.rollback();
     res
       .status(500)
-      .json({ error: `Remove from wishlist error: ${error.message}` });
+      .json({
+        error: `Lỗi khi xóa khỏi danh sách yêu thích: ${error.message}`,
+      });
   }
 };

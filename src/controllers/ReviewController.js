@@ -20,7 +20,9 @@ export const getAllReviews = async (req, res) => {
     });
     res.status(200).json(reviews);
   } catch (error) {
-    res.status(500).json({ error: `Get reviews error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy danh sách đánh giá: ${error.message}` });
   }
 };
 
@@ -35,7 +37,7 @@ export const createReview = async (req, res) => {
     const product = await Products.findByPk(ProductID, { transaction });
     if (!product) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     // Kiểm tra Rating hợp lệ
@@ -43,7 +45,7 @@ export const createReview = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Rating must be an integer between 1 and 5." });
+        .json({ error: "Điểm đánh giá phải là số nguyên từ 1 đến 5." });
     }
 
     // Tạo đánh giá
@@ -58,10 +60,10 @@ export const createReview = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(201).json({ message: "Review created successfully.", review });
+    res.status(201).json({ message: "Đã tạo đánh giá thành công.", review });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Create review error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi tạo đánh giá: ${error.message}` });
   }
 };
 
@@ -73,14 +75,20 @@ export const getReviewsByProduct = async (req, res) => {
     const reviews = await Reviews.findAll({
       where: { ProductID: productId },
       include: [
-        { model: Users,  as: "User", attributes: ["UserID", "FullName"] },
-        { model: Products,  as: "Product", attributes: ["ProductID", "ProductName"] },
+        { model: Users, as: "User", attributes: ["UserID", "FullName"] },
+        {
+          model: Products,
+          as: "Product",
+          attributes: ["ProductID", "ProductName"],
+        },
       ],
     });
 
     res.status(200).json(reviews);
   } catch (error) {
-    res.status(500).json({ error: `Get reviews error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy danh sách đánh giá: ${error.message}` });
   }
 };
 
@@ -95,13 +103,13 @@ export const updateReview = async (req, res) => {
     const review = await Reviews.findByPk(id, { transaction });
     if (!review) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Review not found." });
+      return res.status(404).json({ error: "Không tìm thấy đánh giá." });
     }
 
     // Chỉ cho phép người dùng cập nhật đánh giá của chính họ hoặc admin
     if (review.UserID !== UserID && req.user.RoleName !== "admin") {
       await transaction.rollback();
-      return res.status(403).json({ error: "Access denied." });
+      return res.status(403).json({ error: "Không có quyền truy cập." });
     }
 
     // Kiểm tra Rating hợp lệ
@@ -109,7 +117,7 @@ export const updateReview = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Rating must be an integer between 1 and 5." });
+        .json({ error: "Điểm đánh giá phải là số nguyên từ 1 đến 5." });
     }
 
     // Cập nhật đánh giá
@@ -122,10 +130,14 @@ export const updateReview = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(200).json({ message: "Review updated successfully.", review });
+    res
+      .status(200)
+      .json({ message: "Đã cập nhật đánh giá thành công.", review });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Update review error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi cập nhật đánh giá: ${error.message}` });
   }
 };
 
@@ -139,21 +151,21 @@ export const deleteReview = async (req, res) => {
     const review = await Reviews.findByPk(id, { transaction });
     if (!review) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Review not found." });
+      return res.status(404).json({ error: "Không tìm thấy đánh giá." });
     }
 
     // Chỉ cho phép người dùng xóa đánh giá của chính họ hoặc admin
     if (review.UserID !== UserID && req.user.RoleName !== "admin") {
       await transaction.rollback();
-      return res.status(403).json({ error: "Access denied." });
+      return res.status(403).json({ error: "Không có quyền truy cập." });
     }
 
     await review.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Review deleted successfully." });
+    res.status(200).json({ message: "Đã xóa đánh giá thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Delete review error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi xóa đánh giá: ${error.message}` });
   }
 };

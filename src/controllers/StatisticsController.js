@@ -77,6 +77,6 @@ export const getRevenueStatistics = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ error: `Get revenue statistics error: ${error.message}` });
+      .json({ error: `Lỗi khi lấy thống kê doanh thu: ${error.message}` });
   }
 };

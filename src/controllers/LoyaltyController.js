@@ -10,7 +10,7 @@ export const getLoyaltyPoints = async (req, res) => {
     const { UserID } = req.user;
     const points = await LoyaltyPoints.findAll({
       where: { UserID },
-      attributes: ["PointID", "Points", "Description", "CreatedAt"], // Thay EarnedAt thành CreatedAt
+      attributes: ["PointID", "Points", "Description", "CreatedAt"],
       order: [["CreatedAt", "DESC"]],
     });
     const totalPoints = points.reduce((sum, point) => sum + point.Points, 0);
@@ -18,7 +18,7 @@ export const getLoyaltyPoints = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ error: `Get loyalty points error: ${error.message}` });
+      .json({ error: `Lỗi khi lấy điểm tích lũy: ${error.message}` });
   }
 };
 
@@ -55,14 +55,14 @@ export const redeemPoints = async (req, res) => {
 
     if (!rewards[rewardType]) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Invalid reward type." });
+      return res.status(400).json({ error: "Loại phần thưởng không hợp lệ." });
     }
 
     const { points: requiredPoints, description, action } = rewards[rewardType];
 
     if (totalPoints < requiredPoints) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Not enough points." });
+      return res.status(400).json({ error: "Không đủ điểm để đổi." });
     }
 
     await LoyaltyPoints.create(
@@ -98,10 +98,10 @@ export const redeemPoints = async (req, res) => {
     await transaction.commit();
     res
       .status(200)
-      .json({ message: "Points redeemed successfully.", reward: rewardResult });
+      .json({ message: "Đã đổi điểm thành công.", reward: rewardResult });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Redeem points error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi đổi điểm: ${error.message}` });
   }
 };
 
@@ -112,7 +112,7 @@ export const getUserPointsByAdmin = async (req, res) => {
 
     const user = await Users.findByPk(userId);
     if (!user) {
-      return res.status(404).json({ error: "User not found." });
+      return res.status(404).json({ error: "Không tìm thấy người dùng." });
     }
 
     const points = await LoyaltyPoints.findAll({
@@ -136,7 +136,9 @@ export const getUserPointsByAdmin = async (req, res) => {
       history: points,
     });
   } catch (error) {
-    res.status(500).json({ error: `Get user points error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy điểm của người dùng: ${error.message}` });
   }
 };
 
@@ -153,7 +155,7 @@ export const updateLoyaltyPoint = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Loyalty point ID must be a valid integer." });
+        .json({ error: "ID bản ghi điểm phải là một số nguyên hợp lệ." });
     }
 
     // Tìm bản ghi
@@ -162,19 +164,15 @@ export const updateLoyaltyPoint = async (req, res) => {
     });
     if (!loyaltyPoint) {
       await transaction.rollback();
-      return res
-        .status(404)
-        .json({
-          error: `Loyalty point record with ID ${loyaltyPointId} not found.`,
-        });
+      return res.status(404).json({
+        error: `Không tìm thấy bản ghi điểm với ID ${loyaltyPointId}.`,
+      });
     }
 
     // Kiểm tra Points
     if (Points === undefined || typeof Points !== "number" || Points === 0) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({ error: "Points must be a non-zero number." });
+      return res.status(400).json({ error: "Điểm phải là một số khác 0." });
     }
 
     // Cập nhật bản ghi
@@ -186,12 +184,12 @@ export const updateLoyaltyPoint = async (req, res) => {
     await transaction.commit();
     res
       .status(200)
-      .json({ message: "Loyalty point updated successfully.", loyaltyPoint });
+      .json({ message: "Đã cập nhật bản ghi điểm thành công.", loyaltyPoint });
   } catch (error) {
     await transaction.rollback();
     res
       .status(500)
-      .json({ error: `Update loyalty point error: ${error.message}` });
+      .json({ error: `Lỗi khi cập nhật bản ghi điểm: ${error.message}` });
   }
 };
 
@@ -204,17 +202,17 @@ export const deleteLoyaltyPoint = async (req, res) => {
     const loyaltyPoint = await LoyaltyPoints.findByPk(id, { transaction });
     if (!loyaltyPoint) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Loyalty point record not found." });
+      return res.status(404).json({ error: "Không tìm thấy bản ghi điểm." });
     }
 
     await loyaltyPoint.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Loyalty point deleted successfully." });
+    res.status(200).json({ message: "Đã xóa bản ghi điểm thành công." });
   } catch (error) {
     await transaction.rollback();
     res
       .status(500)
-      .json({ error: `Delete loyalty point error: ${error.message}` });
+      .json({ error: `Lỗi khi xóa bản ghi điểm: ${error.message}` });
   }
 };

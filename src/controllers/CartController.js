@@ -16,14 +16,14 @@ export const addToCart = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "ProductID and Quantity must be integers." });
+        .json({ error: "ProductID và Quantity phải đúng kiểu dữ liệu." });
     }
 
     // Kiểm tra sản phẩm
     const product = await Products.findByPk(ProductID, { transaction });
     if (!product) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     // Kiểm tra số lượng
@@ -31,7 +31,7 @@ export const addToCart = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Quantity must be greater than 0." });
+        .json({ error: "Số lượng phải lớn hơn 0." });
     }
 
     // Kiểm tra hàng tồn kho
@@ -44,7 +44,7 @@ export const addToCart = async (req, res) => {
     if (totalQuantity > product.StockQuantity) {
       await transaction.rollback();
       return res.status(400).json({
-        error: `Not enough stock for ${product.ProductName}. Available: ${product.StockQuantity}, Requested: ${totalQuantity}.`,
+        error: `Không đủ hàng tồn kho cho ${product.ProductName}. Số lượng có sẵn: ${product.StockQuantity}, Số lượng yêu cầu: ${totalQuantity}.`,
       });
     }
 
@@ -59,10 +59,10 @@ export const addToCart = async (req, res) => {
     }
 
     await transaction.commit();
-    res.status(201).json({ message: "Product added to cart.", cartItem });
+    res.status(201).json({ message: "Đã thêm sản phẩm vào giỏ hàng.", cartItem });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Add to cart error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi thêm vào giỏ hàng: ${error.message}` });
   }
 };
 
@@ -90,7 +90,7 @@ export const getCart = async (req, res) => {
 
     res.status(200).json({ cartItems, totalAmount });
   } catch (error) {
-    res.status(500).json({ error: `Get cart error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi lấy giỏ hàng: ${error.message}` });
   }
 };
 
@@ -108,12 +108,12 @@ export const updateCart = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Cart ID must be a valid integer." });
+        .json({ error: "Cart ID phải là một số  hợp lệ." });
     }
 
     if (!Number.isInteger(Quantity)) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Quantity must be an integer." });
+      return res.status(400).json({ error: "Số lượng phải là đúng kiểu dữ liệu." });
     }
 
     // Tìm bản ghi trong bảng Cart
@@ -122,7 +122,7 @@ export const updateCart = async (req, res) => {
       await transaction.rollback();
       return res
         .status(404)
-        .json({ error: "Cart item not found or unauthorized." });
+        .json({ error: "Cart Không tìm thấy sản phẩm trong giỏ hàng hoặc không có quyền truy cập" });
     }
 
     // Kiểm tra số lượng
@@ -130,7 +130,7 @@ export const updateCart = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Quantity must be greater than 0." });
+        .json({ error: "Số lượng phải lớn hơn 0." });
     }
 
     // Tìm sản phẩm trong bảng Products
@@ -139,7 +139,7 @@ export const updateCart = async (req, res) => {
     });
     if (!product) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     // Kiểm tra hàng tồn kho dựa trên tổng số lượng (không chỉ delta)
@@ -152,7 +152,7 @@ export const updateCart = async (req, res) => {
       if (deltaQuantity > availableStock) {
         await transaction.rollback();
         return res.status(400).json({
-          error: `Not enough stock for ${product.ProductName}. Available: ${availableStock}, Requested additional: ${deltaQuantity}.`,
+          error: `Không đủ hàng tồn kho cho ${product.ProductName}. Số lượng có sẵn: ${availableStock}, Số lượng bổ sung yêu cầu: ${deltaQuantity}.`,
         });
       }
     }
@@ -166,7 +166,7 @@ export const updateCart = async (req, res) => {
 
     await transaction.commit();
     res.status(200).json({
-      message: "Cart updated successfully.",
+      message: "Đã cập nhật giỏ hàng thành công.",
       cartItem: {
         CartID: cartItem.CartID,
         ProductID: cartItem.ProductID,
@@ -175,7 +175,7 @@ export const updateCart = async (req, res) => {
     });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Update cart error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi cập nhật giỏ hàng: ${error.message}` });
   }
 };
 
@@ -191,7 +191,7 @@ export const deleteFromCart = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Cart ID must be a valid integer." });
+        .json({ error: "Cart ID phải là một số  hợp lệ." });
     }
 
     const cartItem = await Cart.findByPk(cartId, { transaction });
@@ -199,15 +199,15 @@ export const deleteFromCart = async (req, res) => {
       await transaction.rollback();
       return res
         .status(404)
-        .json({ error: "Cart item not found or unauthorized." });
+        .json({ error: "Không tìm thấy sản phẩm trong giỏ hàng hoặc không có quyền truy cập." });
     }
 
     await cartItem.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Product removed from cart." });
+    res.status(200).json({ message: "Đã xóa sản phẩm khỏi giỏ hàng." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Delete from cart error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi xóa sản phẩm khỏi giỏ hàng: ${error.message}` });
   }
 };

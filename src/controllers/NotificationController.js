@@ -13,7 +13,7 @@ export const getNotifications = async (req, res) => {
 
     const notifications = await Notification.findAll({
       where: {
-        [Op.or]: [{ UserID }, { UserID: null }], 
+        [Op.or]: [{ UserID }, { UserID: null }],
       },
       attributes: ["NotificationID", "Title", "Message", "IsRead", "CreatedAt"],
       order: [["CreatedAt", "DESC"]],
@@ -23,7 +23,7 @@ export const getNotifications = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ error: `Get notifications error: ${error.message}` });
+      .json({ error: `Lỗi khi lấy danh sách thông báo: ${error.message}` });
   }
 };
 
@@ -37,23 +37,23 @@ export const markNotificationAsRead = async (req, res) => {
     const notifications = await Notification.findByPk(id, { transaction });
     if (!notifications) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Notification not found." });
+      return res.status(404).json({ error: "Không tìm thấy thông báo." });
     }
 
     if (notifications.UserID !== null && notifications.UserID !== UserID) {
       await transaction.rollback();
-      return res.status(403).json({ error: "Access denied." });
+      return res.status(403).json({ error: "Không có quyền truy cập." });
     }
 
     await notifications.update({ IsRead: true }, { transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Notification marked as read." });
+    res.status(200).json({ message: "Đã đánh dấu thông báo là đã đọc." });
   } catch (error) {
     await transaction.rollback();
     res
       .status(500)
-      .json({ error: `Mark notification error: ${error.message}` });
+      .json({ error: `Lỗi khi đánh dấu thông báo: ${error.message}` });
   }
 };
 
@@ -61,7 +61,7 @@ export const markNotificationAsRead = async (req, res) => {
 export const createNotification = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { UserID, Title, Message } = req.body;  
+    const { UserID, Title, Message } = req.body;
 
     const notification = await Notification.create(
       { UserID, Title, Message, IsRead: false },
@@ -71,12 +71,10 @@ export const createNotification = async (req, res) => {
     await transaction.commit();
     res
       .status(201)
-      .json({ message: "Notification created successfully.", notification });
+      .json({ message: "Đã tạo thông báo thành công.", notification });
   } catch (error) {
     await transaction.rollback();
-    res
-      .status(500)
-      .json({ error: `Create notification error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi tạo thông báo: ${error.message}` });
   }
 };
 
@@ -98,7 +96,7 @@ export const getAllNotifications = async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ error: `Get notifications error: ${error.message}` });
+      .json({ error: `Lỗi khi lấy danh sách thông báo: ${error.message}` });
   }
 };
 
@@ -111,17 +109,15 @@ export const deleteNotification = async (req, res) => {
     const notification = await Notification.findByPk(id, { transaction });
     if (!notification) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Notification not found." });
+      return res.status(404).json({ error: "Không tìm thấy thông báo." });
     }
 
     await notification.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Notification deleted successfully." });
+    res.status(200).json({ message: "Đã xóa thông báo thành công." });
   } catch (error) {
     await transaction.rollback();
-    res
-      .status(500)
-      .json({ error: `Delete notification error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi xóa thông báo: ${error.message}` });
   }
 };

@@ -36,7 +36,9 @@ export const getAllPromotions = async (req, res) => {
     });
     res.status(200).json(promotions);
   } catch (error) {
-    res.status(500).json({ error: `Get promotions error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy danh sách khuyến mãi: ${error.message}` });
   }
 };
 
@@ -60,7 +62,7 @@ export const createPromotion = async (req, res) => {
       const user = await Users.findByPk(UserID, { transaction });
       if (!user) {
         await transaction.rollback();
-        return res.status(400).json({ error: "Invalid UserID." });
+        return res.status(400).json({ error: "UserID không hợp lệ." });
       }
     }
 
@@ -69,7 +71,7 @@ export const createPromotion = async (req, res) => {
       const product = await Products.findByPk(ProductID, { transaction });
       if (!product) {
         await transaction.rollback();
-        return res.status(400).json({ error: "Invalid ProductID." });
+        return res.status(400).json({ error: "ProductID không hợp lệ." });
       }
     }
 
@@ -81,19 +83,17 @@ export const createPromotion = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "DiscountPercentage must be between 0 and 100." });
+        .json({ error: "Tỷ lệ giảm giá phải nằm trong khoảng từ 0 đến 100." });
     }
     if (DiscountValue && DiscountValue < 0) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({ error: "DiscountValue must be non-negative." });
+      return res.status(400).json({ error: "Giá trị giảm giá không được âm." });
     }
     if (new Date(StartDate) >= new Date(EndDate)) {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "EndDate must be after StartDate." });
+        .json({ error: "Ngày kết thúc phải sau ngày bắt đầu." });
     }
 
     const promotion = await Promotions.create(
@@ -113,10 +113,10 @@ export const createPromotion = async (req, res) => {
     await transaction.commit();
     res
       .status(201)
-      .json({ message: "Promotion created successfully.", promotion });
+      .json({ message: "Đã tạo khuyến mãi thành công.", promotion });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Create promotion error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi tạo khuyến mãi: ${error.message}` });
   }
 };
 
@@ -139,14 +139,14 @@ export const updatePromotion = async (req, res) => {
     const promotion = await Promotions.findByPk(id, { transaction });
     if (!promotion) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Promotion not found." });
+      return res.status(404).json({ error: "Không tìm thấy khuyến mãi." });
     }
 
     // Kiểm tra UserID (nếu có)
     if (UserID !== undefined) {
       if (UserID && !(await Users.findByPk(UserID, { transaction }))) {
         await transaction.rollback();
-        return res.status(400).json({ error: "Invalid UserID." });
+        return res.status(400).json({ error: "UserID không hợp lệ." });
       }
     }
 
@@ -154,7 +154,7 @@ export const updatePromotion = async (req, res) => {
     if (ProductID !== undefined) {
       if (ProductID && !(await Products.findByPk(ProductID, { transaction }))) {
         await transaction.rollback();
-        return res.status(400).json({ error: "Invalid ProductID." });
+        return res.status(400).json({ error: "ProductID không hợp lệ." });
       }
     }
 
@@ -166,19 +166,17 @@ export const updatePromotion = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "DiscountPercentage must be between 0 and 100." });
+        .json({ error: "Tỷ lệ giảm giá phải nằm trong khoảng từ 0 đến 100." });
     }
     if (DiscountValue !== undefined && DiscountValue < 0) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({ error: "DiscountValue must be non-negative." });
+      return res.status(400).json({ error: "Giá trị giảm giá không được âm." });
     }
     if (StartDate && EndDate && new Date(StartDate) >= new Date(EndDate)) {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "EndDate must be after StartDate." });
+        .json({ error: "Ngày kết thúc phải sau ngày bắt đầu." });
     }
 
     await promotion.update(
@@ -200,10 +198,12 @@ export const updatePromotion = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(200).json({ message: "Promotion updated successfully." });
+    res.status(200).json({ message: "Đã cập nhật khuyến mãi thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Update promotion error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi cập nhật khuyến mãi: ${error.message}` });
   }
 };
 
@@ -216,15 +216,15 @@ export const deletePromotion = async (req, res) => {
     const promotion = await Promotions.findByPk(id, { transaction });
     if (!promotion) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Promotion not found." });
+      return res.status(404).json({ error: "Không tìm thấy khuyến mãi." });
     }
 
     await promotion.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Promotion deleted successfully." });
+    res.status(200).json({ message: "Đã xóa khuyến mãi thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Delete promotion error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi xóa khuyến mãi: ${error.message}` });
   }
 };

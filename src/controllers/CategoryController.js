@@ -33,7 +33,9 @@ export const getAllCategories = async (req, res) => {
 
     res.status(200).json(categories);
   } catch (error) {
-    res.status(500).json({ error: `Get categories error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy danh sách danh mục: ${error.message}` });
   }
 };
 
@@ -45,7 +47,7 @@ export const createCategory = async (req, res) => {
 
     if (!CategoryName) {
       await transaction.rollback();
-      return res.status(400).json({ error: "CategoryName is required." });
+      return res.status(400).json({ error: "Tên danh mục là bắt buộc." });
     }
 
     const category = await Categories.create(
@@ -54,12 +56,10 @@ export const createCategory = async (req, res) => {
     );
 
     await transaction.commit();
-    res
-      .status(201)
-      .json({ message: "Category created successfully.", category });
+    res.status(201).json({ message: "Đã tạo danh mục thành công.", category });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Create category error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi tạo danh mục: ${error.message}` });
   }
 };
 
@@ -73,7 +73,7 @@ export const updateCategory = async (req, res) => {
     const category = await Categories.findByPk(id, { transaction });
     if (!category) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Category not found." });
+      return res.status(404).json({ error: "Không tìm thấy danh mục." });
     }
 
     await category.update(
@@ -86,10 +86,12 @@ export const updateCategory = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(200).json({ message: "Category updated successfully." });
+    res.status(200).json({ message: "Đã cập nhật danh mục thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Update category error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi cập nhật danh mục: ${error.message}` });
   }
 };
 
@@ -102,15 +104,15 @@ export const deleteCategory = async (req, res) => {
     const category = await Categories.findByPk(id, { transaction });
     if (!category) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Category not found." });
+      return res.status(404).json({ error: "Không tìm thấy danh mục." });
     }
 
     await category.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Category deleted successfully." });
+    res.status(200).json({ message: "Đã xóa danh mục thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Delete category error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi xóa danh mục: ${error.message}` });
   }
 };

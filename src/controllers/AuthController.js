@@ -48,13 +48,13 @@ export const login = async (req, res) => {
 
     // Validate email
     if (!Email || !validateEmail(Email)) {
-      return res.status(400).json({ error: "Invalid email format." });
+      return res.status(400).json({ error: "Email không đúng định dạng." });
     }
 
     // Validate password
     if (!Password || !validatePassword(Password)) {
       return res.status(400).json({
-        error: "Password must be at least 6 digits and contain only numbers.",
+        error: "Mật khẩu phải có ít nhất 6 chữ số.",
       });
     }
 
@@ -65,13 +65,13 @@ export const login = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(401).json({ error: "Invalid email or password." });
+      return res.status(401).json({ error: "Email không hợp lệ." });
     }
 
     // Kiểm tra mật khẩu
     const isMatch = await bcrypt.compare(Password, user.Password);
     if (!isMatch) {
-      return res.status(401).json({ error: "Invalid email or password." });
+      return res.status(401).json({ error: "Mật khẩu không hợp lệ." });
     }
 
     // Tạo token JWT
@@ -88,9 +88,9 @@ export const login = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    res.status(200).json({ message: "Login successful", token });
+    res.status(200).json({ message: "Đăng nhập thành công!", token });
   } catch (error) {
-    res.status(500).json({ error: `Login error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi đăng nhập: ${error.message}` });
   }
 };
 
@@ -105,20 +105,20 @@ export const signup = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "FullName must contain only letters and spaces." });
+        .json({ error: "Họ tên chỉ có thể nhập chữ cái và khoảng trống." });
     }
 
     // Validate Email
     if (!Email || !validateEmail(Email)) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Invalid email format." });
+      return res.status(400).json({ error: "Email không đúng định dạng." });
     }
 
     // Validate Password
     if (!Password || !validatePassword(Password)) {
       await transaction.rollback();
       return res.status(400).json({
-        error: "Password must be at least 6 digits and contain only numbers.",
+        error: "Mật khẩu phải có ít nhất 6 chữ số.",
       });
     }
 
@@ -127,14 +127,14 @@ export const signup = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "Phone must contain only numbers." });
+        .json({ error: "SĐT chỉ có thể nhập số." });
     }
 
     // Kiểm tra email đã tồn tại
     const existingUser = await Users.findOne({ where: { Email }, transaction });
     if (existingUser) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Email already exists." });
+      return res.status(400).json({ error: "Email đã tồn tại." });
     }
 
     // Mã hóa mật khẩu
@@ -147,7 +147,7 @@ export const signup = async (req, res) => {
     });
     if (!userRole) {
       await transaction.rollback();
-      return res.status(500).json({ error: "User role not found." });
+      return res.status(500).json({ error: "Không thể tìm thấy người dùng." });
     }
 
     // Tạo người dùng mới
@@ -164,10 +164,10 @@ export const signup = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(201).json({ message: "Signup successful. Please login." });
+    res.status(201).json({ message: "Đăng ký thành công, bạn có thể đăng nhập." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Signup error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi đăng ký: ${error.message}` });
   }
 };
 
@@ -180,14 +180,14 @@ export const forgotPassword = async (req, res) => {
     // Validate Email
     if (!Email || !validateEmail(Email)) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Invalid email format." });
+      return res.status(400).json({ error: "Email không đúng định dạng." });
     }
 
     // Kiểm tra email
     const user = await Users.findOne({ where: { Email }, transaction });
     if (!user) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Email not found." });
+      return res.status(404).json({ error: "Email Không tồn tại." });
     }
 
     // Tạo token reset
@@ -226,10 +226,10 @@ export const forgotPassword = async (req, res) => {
     await transaction.commit();
     res
       .status(200)
-      .json({ message: "Password reset link sent to your email." });
+      .json({ message: "Link reset mật khẩu đã được gửi qua mail của bạn." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Forgot password error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi thao tác: ${error.message}` });
   }
 };
 
@@ -237,14 +237,14 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { Token, NewPassword } = req.body;
+    const { Token, NewPassword } = req.body; 
 
     // Validate NewPassword
     if (!NewPassword || !validatePassword(NewPassword)) {
       await transaction.rollback();
       return res.status(400).json({
         error:
-          "New password must be at least 6 digits and contain only numbers.",
+          "Mật khẩu mới ít nhất phải có 6 số.",
       });
     }
 
@@ -267,7 +267,7 @@ export const resetPassword = async (req, res) => {
     const user = await Users.findByPk(resetToken.UserID, { transaction });
     if (!user) {
       await transaction.rollback();
-      return res.status(404).json({ error: "User not found." });
+      return res.status(404).json({ error: "Không thể tìm thấy người dùng." });
     }
 
     // Mã hóa mật khẩu mới
@@ -280,10 +280,10 @@ export const resetPassword = async (req, res) => {
     await ResetToken.destroy({ where: { Token }, transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Password reset successfully." });
+    res.status(200).json({ message: "Đặt lại mật khẩu thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Reset password error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi đặt lại mật khẩu: ${error.message}` });
   }
 };
 
@@ -299,7 +299,7 @@ export const changePassword = async (req, res) => {
       await transaction.rollback();
       return res.status(400).json({
         error:
-          "Old password must be at least 6 digits and contain only numbers.",
+          "Mật khẩu cũ phải đúng, ít nhất 6 số.",
       });
     }
 
@@ -308,7 +308,7 @@ export const changePassword = async (req, res) => {
       await transaction.rollback();
       return res.status(400).json({
         error:
-          "New password must be at least 6 digits and contain only numbers.",
+          "Mật khẩu mới ít nhất phải có 6 số.",
       });
     }
 
@@ -316,14 +316,14 @@ export const changePassword = async (req, res) => {
     const user = await Users.findByPk(UserID, { transaction });
     if (!user) {
       await transaction.rollback();
-      return res.status(404).json({ error: "User not found." });
+      return res.status(404).json({ error: "Không thể tìm thấy người dùng." });
     }
 
     // Kiểm tra mật khẩu cũ
     const isMatch = await bcrypt.compare(OldPassword, user.Password);
     if (!isMatch) {
       await transaction.rollback();
-      return res.status(401).json({ error: "Incorrect old password." });
+      return res.status(401).json({ error: "Mật khẩu cũ không chính xác." });
     }
 
     // Mã hóa mật khẩu mới
@@ -333,9 +333,9 @@ export const changePassword = async (req, res) => {
     await user.update({ Password: hashedPassword }, { transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Password changed successfully." });
+    res.status(200).json({ message: "Đã thay đổi mật khẩu thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Change password error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi đổi mật khẩu: ${error.message}` });
   }
 };

@@ -9,7 +9,7 @@ export const addProduct = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const {
-      CategoryIDs, 
+      CategoryIDs,
       ProductName,
       Description,
       Price,
@@ -24,9 +24,7 @@ export const addProduct = async (req, res) => {
       CategoryIDs.length === 0
     ) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({ error: "At least one CategoryID is required." });
+      return res.status(400).json({ error: "Cần ít nhất một CategoryID." });
     }
 
     const categories = await Categories.findAll({
@@ -37,19 +35,17 @@ export const addProduct = async (req, res) => {
       await transaction.rollback();
       return res
         .status(404)
-        .json({ error: "One or more categories not found." });
+        .json({ error: "Không tìm thấy một hoặc nhiều danh mục." });
     }
 
     // Kiểm tra giá và số lượng
     if (Price <= 0) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Price must be greater than 0." });
+      return res.status(400).json({ error: "Giá phải lớn hơn 0." });
     }
     if (StockQuantity < 0) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({ error: "Stock quantity cannot be negative." });
+      return res.status(400).json({ error: "Số lượng tồn kho không được âm." });
     }
 
     // Tạo sản phẩm
@@ -79,10 +75,10 @@ export const addProduct = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(201).json({ message: "Product added successfully.", product });
+    res.status(201).json({ message: "Đã thêm sản phẩm thành công.", product });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Add product error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi thêm sản phẩm: ${error.message}` });
   }
 };
 
@@ -93,8 +89,8 @@ export const getAllProducts = async (req, res) => {
       include: [
         {
           model: Categories,
-          as: "Categories", 
-          through: { attributes: [] }, 
+          as: "Categories",
+          through: { attributes: [] },
           attributes: ["CategoryID", "CategoryName"],
         },
       ],
@@ -111,7 +107,9 @@ export const getAllProducts = async (req, res) => {
     });
     res.status(200).json(products);
   } catch (error) {
-    res.status(500).json({ error: `Get products error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy danh sách sản phẩm: ${error.message}` });
   }
 };
 
@@ -123,7 +121,7 @@ export const getProductById = async (req, res) => {
       include: [
         {
           model: Categories,
-          as: "Categories", // Thay "Category" bằng "Categories"
+          as: "Categories",
           through: { attributes: [] },
           attributes: ["CategoryID", "CategoryName"],
         },
@@ -140,11 +138,13 @@ export const getProductById = async (req, res) => {
       ],
     });
     if (!product) {
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
     res.status(200).json(product);
   } catch (error) {
-    res.status(500).json({ error: `Get product error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy chi tiết sản phẩm: ${error.message}` });
   }
 };
 
@@ -154,7 +154,7 @@ export const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      CategoryIDs, // Thay CategoryID bằng CategoryIDs
+      CategoryIDs,
       ProductName,
       Description,
       Price,
@@ -165,7 +165,7 @@ export const updateProduct = async (req, res) => {
     const product = await Products.findByPk(id, { transaction });
     if (!product) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     // Kiểm tra danh mục (nếu có)
@@ -178,7 +178,7 @@ export const updateProduct = async (req, res) => {
         await transaction.rollback();
         return res
           .status(404)
-          .json({ error: "One or more categories not found." });
+          .json({ error: "Không tìm thấy một hoặc nhiều danh mục." });
       }
       await product.setCategories(categories, { transaction });
     }
@@ -186,13 +186,11 @@ export const updateProduct = async (req, res) => {
     // Kiểm tra giá và số lượng (nếu có)
     if (Price !== undefined && Price <= 0) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Price must be greater than 0." });
+      return res.status(400).json({ error: "Giá phải lớn hơn 0." });
     }
     if (StockQuantity !== undefined && StockQuantity < 0) {
       await transaction.rollback();
-      return res
-        .status(400)
-        .json({ error: "Stock quantity cannot be negative." });
+      return res.status(400).json({ error: "Số lượng tồn kho không được âm." });
     }
 
     // Cập nhật sản phẩm
@@ -210,10 +208,12 @@ export const updateProduct = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(200).json({ message: "Product updated successfully." });
+    res.status(200).json({ message: "Đã cập nhật sản phẩm thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Update product error: ${error.message}` });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi cập nhật sản phẩm: ${error.message}` });
   }
 };
 
@@ -226,16 +226,16 @@ export const deleteProduct = async (req, res) => {
     const product = await Products.findByPk(id, { transaction });
     if (!product) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     await product.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "Product deleted successfully." });
+    res.status(200).json({ message: "Đã xóa sản phẩm thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Delete product error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi xóa sản phẩm: ${error.message}` });
   }
 };
 
@@ -249,7 +249,7 @@ export const addCategoriesToProduct = async (req, res) => {
     const product = await Products.findByPk(id, { transaction });
     if (!product) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     if (
@@ -260,7 +260,7 @@ export const addCategoriesToProduct = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "CategoryIDs must be a non-empty array." });
+        .json({ error: "CategoryIDs phải là một mảng không rỗng." });
     }
 
     const categories = await Categories.findAll({
@@ -271,7 +271,7 @@ export const addCategoriesToProduct = async (req, res) => {
       await transaction.rollback();
       return res
         .status(404)
-        .json({ error: "One or more categories not found." });
+        .json({ error: "Không tìm thấy một hoặc nhiều danh mục." });
     }
 
     await product.addCategories(categories, { transaction });
@@ -279,10 +279,10 @@ export const addCategoriesToProduct = async (req, res) => {
     await transaction.commit();
     res
       .status(200)
-      .json({ message: "Categories added to product successfully." });
+      .json({ message: "Đã thêm danh mục vào sản phẩm thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: `Add categories error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi thêm danh mục: ${error.message}` });
   }
 };
 
@@ -296,7 +296,7 @@ export const removeCategoriesFromProduct = async (req, res) => {
     const product = await Products.findByPk(id, { transaction });
     if (!product) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Product not found." });
+      return res.status(404).json({ error: "Không tìm thấy sản phẩm." });
     }
 
     if (
@@ -307,7 +307,7 @@ export const removeCategoriesFromProduct = async (req, res) => {
       await transaction.rollback();
       return res
         .status(400)
-        .json({ error: "CategoryIDs must be a non-empty array." });
+        .json({ error: "CategoryIDs phải là một mảng không rỗng." });
     }
 
     const categories = await Categories.findAll({
@@ -318,7 +318,7 @@ export const removeCategoriesFromProduct = async (req, res) => {
       await transaction.rollback();
       return res
         .status(404)
-        .json({ error: "One or more categories not found." });
+        .json({ error: "Không tìm thấy một hoặc nhiều danh mục." });
     }
 
     await product.removeCategories(categories, { transaction });
@@ -326,11 +326,9 @@ export const removeCategoriesFromProduct = async (req, res) => {
     await transaction.commit();
     res
       .status(200)
-      .json({ message: "Categories removed from product successfully." });
+      .json({ message: "Đã xóa danh mục khỏi sản phẩm thành công." });
   } catch (error) {
     await transaction.rollback();
-    res
-      .status(500)
-      .json({ error: `Remove categories error: ${error.message}` });
+    res.status(500).json({ error: `Lỗi khi xóa danh mục: ${error.message}` });
   }
 };

@@ -26,7 +26,9 @@ export const getAllUsers = async (req, res) => {
 
     res.status(200).json(users);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy danh sách người dùng: ${error.message}` });
   }
 };
 
@@ -49,17 +51,19 @@ export const getUserById = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: "User not found." });
+      return res.status(404).json({ error: "Không tìm thấy người dùng." });
     }
 
     // Chỉ cho phép người dùng xem thông tin của chính họ hoặc admin
     if (req.user.UserID !== user.UserID && req.user.RoleName !== "admin") {
-      return res.status(403).json({ error: "Access denied." });
+      return res.status(403).json({ error: "Không có quyền truy cập." });
     }
 
     res.status(200).json(user);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi lấy thông tin người dùng: ${error.message}` });
   }
 };
 
@@ -73,13 +77,13 @@ export const updateUser = async (req, res) => {
     const user = await Users.findByPk(id, { transaction });
     if (!user) {
       await transaction.rollback();
-      return res.status(404).json({ error: "User not found." });
+      return res.status(404).json({ error: "Không tìm thấy người dùng." });
     }
 
     // Chỉ cho phép người dùng cập nhật thông tin của chính họ hoặc admin
     if (req.user.UserID !== user.UserID && req.user.RoleName !== "admin") {
       await transaction.rollback();
-      return res.status(403).json({ error: "Access denied." });
+      return res.status(403).json({ error: "Không có quyền truy cập." });
     }
 
     // Kiểm tra email mới (nếu có)
@@ -90,7 +94,7 @@ export const updateUser = async (req, res) => {
       });
       if (existingUser) {
         await transaction.rollback();
-        return res.status(400).json({ error: "Email already exists." });
+        return res.status(400).json({ error: "Email đã tồn tại." });
       }
     }
 
@@ -113,10 +117,14 @@ export const updateUser = async (req, res) => {
     );
 
     await transaction.commit();
-    res.status(200).json({ message: "User updated successfully." });
+    res
+      .status(200)
+      .json({ message: "Đã cập nhật thông tin người dùng thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: error.message });
+    res
+      .status(500)
+      .json({ error: `Lỗi khi cập nhật người dùng: ${error.message}` });
   }
 };
 
@@ -129,21 +137,23 @@ export const deleteUser = async (req, res) => {
     const user = await Users.findByPk(id, { transaction });
     if (!user) {
       await transaction.rollback();
-      return res.status(404).json({ error: "User not found." });
+      return res.status(404).json({ error: "Không tìm thấy người dùng." });
     }
 
     // Không cho phép xóa chính mình
     if (req.user.UserID === user.UserID) {
       await transaction.rollback();
-      return res.status(400).json({ error: "Cannot delete your own account." });
+      return res
+        .status(400)
+        .json({ error: "Không thể xóa tài khoản của chính bạn." });
     }
 
     await user.destroy({ transaction });
 
     await transaction.commit();
-    res.status(200).json({ message: "User deleted successfully." });
+    res.status(200).json({ message: "Đã xóa người dùng thành công." });
   } catch (error) {
     await transaction.rollback();
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: `Lỗi khi xóa người dùng: ${error.message}` });
   }
 };
