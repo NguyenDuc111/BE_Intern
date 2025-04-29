@@ -29,7 +29,7 @@ export default class LoyaltyPoints extends Model {
   }, {
     sequelize,
     tableName: 'LoyaltyPoints',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

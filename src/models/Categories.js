@@ -25,7 +25,7 @@ export default class Categories extends Model {
   }, {
     sequelize,
     tableName: 'Categories',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

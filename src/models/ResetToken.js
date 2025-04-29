@@ -30,7 +30,7 @@ export default class ResetToken extends Model {
   }, {
     sequelize,
     tableName: 'ResetToken',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

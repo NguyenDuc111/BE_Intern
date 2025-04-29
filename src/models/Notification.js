@@ -34,7 +34,7 @@ export default class Notification extends Model {
   }, {
     sequelize,
     tableName: 'Notification',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

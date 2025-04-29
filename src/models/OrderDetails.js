@@ -37,7 +37,7 @@ export default class OrderDetails extends Model {
   }, {
     sequelize,
     tableName: 'OrderDetails',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

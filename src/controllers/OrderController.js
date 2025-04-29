@@ -1,5 +1,6 @@
 import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
+import { Op } from "sequelize"; // Thêm import Op
 import {
   createOrderService,
   orderReturnService,
@@ -21,8 +22,17 @@ export const createOrder = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const { UserID } = req.user;
-    const { items, pointsUsed, promotionId, cartItemIds, shippingAddress } =
+    const { items, pointsUsed, promotionCode, cartItemIds, shippingAddress } =
       req.body;
+
+    console.log("Received order data:", {
+      UserID,
+      items,
+      pointsUsed,
+      promotionCode,
+      cartItemIds,
+      shippingAddress,
+    });
 
     // Kiểm tra items
     if (!items || !Array.isArray(items) || items.length === 0) {
@@ -38,10 +48,20 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ error: "Địa chỉ giao hàng là bắt buộc." });
     }
 
+    // Kiểm tra pointsUsed
+    if (!Number.isInteger(pointsUsed) || pointsUsed < 0) {
+      await transaction.rollback();
+      return res.status(400).json({ error: "Số điểm sử dụng không hợp lệ." });
+    }
+
     // Tính tổng giá trị đơn hàng và kiểm tra tồn kho
     let totalAmount = 0;
     for (const item of items) {
-      if (!item.ProductID || !item.Quantity || item.Quantity <= 0) {
+      if (
+        !Number.isInteger(item.ProductID) ||
+        !Number.isInteger(item.Quantity) ||
+        item.Quantity <= 0
+      ) {
         await transaction.rollback();
         return res
           .status(400)
@@ -63,7 +83,7 @@ export const createOrder = async (req, res) => {
       totalAmount += product.Price * item.Quantity;
     }
 
-    // Áp dụng giảm giá từ điểm (1 điểm = 1,000 VND)
+    // Áp dụng giảm giá từ điểm
     let discountFromPoints = 0;
     if (pointsUsed > 0) {
       const points = await LoyaltyPoints.findAll({
@@ -88,37 +108,52 @@ export const createOrder = async (req, res) => {
 
     // Áp dụng mã khuyến mãi
     let discountFromPromotion = 0;
-    if (promotionId) {
-      const promotion = await Promotion.findByPk(promotionId, { transaction });
-      if (
-        !promotion ||
-        (promotion.UserID && promotion.UserID !== UserID) ||
-        new Date() < promotion.StartDate ||
-        new Date() > promotion.EndDate
-      ) {
+    let promotionId = null;
+    let discountPercentage = 0;
+    if (promotionCode) {
+      const promotion = await Promotion.findOne({
+        where: {
+          Code: promotionCode,
+          StartDate: { [Op.lte]: new Date() }, // Sử dụng Op.lte
+          EndDate: { [Op.gte]: new Date() }, // Sử dụng Op.gte
+          DiscountPercentage: { [Op.ne]: null }, // Sử dụng Op.ne
+        },
+        transaction,
+      });
+
+      if (!promotion) {
         await transaction.rollback();
-        return res
-          .status(400)
-          .json({ error: "Mã khuyến mãi không hợp lệ hoặc đã hết hạn." });
+        const existingPromotion = await Promotion.findOne({
+          where: { Code: promotionCode },
+          transaction,
+        });
+        if (existingPromotion) {
+          return res.status(400).json({ error: "Mã khuyến mãi đã hết hạn." });
+        }
+        return res.status(400).json({ error: "Mã khuyến mãi không hợp lệ." });
       }
+
+      promotionId = promotion.PromotionID;
+      discountPercentage = promotion.DiscountPercentage;
       discountFromPromotion =
-        promotion.DiscountValue ||
         (totalAmount * promotion.DiscountPercentage) / 100;
     }
 
-    // Tổng giảm giá không vượt quá TotalAmount
-    const totalDiscount = Math.min(
-      discountFromPoints + discountFromPromotion,
-      totalAmount
-    );
-    const finalAmount = totalAmount - totalDiscount;
+    const finalAmount =
+      totalAmount - discountFromPoints - discountFromPromotion;
+    if (finalAmount < 0) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "Tổng giá trị đơn hàng không được âm." });
+    }
 
     // Tạo đơn hàng
     const order = await Orders.create(
       {
         UserID,
-        PromotionID: promotionId || null,
-        TotalAmount: finalAmount.toFixed(2),
+        PromotionID: promotionId,
+        TotalAmount: parseFloat(finalAmount.toFixed(2)),
         Status: "Pending",
         ShippingAddress: shippingAddress,
       },
@@ -139,6 +174,16 @@ export const createOrder = async (req, res) => {
 
     // Xóa sản phẩm khỏi giỏ hàng
     if (cartItemIds && Array.isArray(cartItemIds) && cartItemIds.length > 0) {
+      const validCartItems = await Cart.findAll({
+        where: { CartID: cartItemIds, UserID },
+        transaction,
+      });
+      if (validCartItems.length !== cartItemIds.length) {
+        await transaction.rollback();
+        return res
+          .status(400)
+          .json({ error: "Một số mục trong giỏ hàng không hợp lệ." });
+      }
       await Cart.destroy({
         where: { CartID: cartItemIds, UserID },
         transaction,
@@ -155,10 +200,12 @@ export const createOrder = async (req, res) => {
         discountFromPoints,
         discountFromPromotion,
         finalAmount,
+        discountPercentage,
       },
     });
   } catch (error) {
     await transaction.rollback();
+    console.error("Lỗi khi tạo đơn hàng:", error);
     res.status(500).json({ error: `Lỗi khi tạo đơn hàng: ${error.message}` });
   }
 };
@@ -176,7 +223,6 @@ export const processPayment = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy đơn hàng." });
     }
 
-    // Kiểm tra quyền truy cập
     if (order.UserID !== UserID) {
       await transaction.rollback();
       return res
@@ -185,9 +231,8 @@ export const processPayment = async (req, res) => {
     }
 
     if (paymentMethod === "vnpay") {
-      // Tạo URL thanh toán VNPay
       const orderInfo = `Thanh toán đơn hàng #${order.OrderID}`;
-      const returnUrl = "http://localhost:5173/Cart ";
+      const returnUrl = "http://localhost:8080/vnpay/callback";
       const paymentUrl = await createOrderService(
         req,
         parseInt(order.TotalAmount),
@@ -196,7 +241,6 @@ export const processPayment = async (req, res) => {
         order.OrderID
       );
 
-      // Cập nhật trạng thái thành Processing
       await order.update({ Status: "Processing" }, { transaction });
       await transaction.commit();
       return res.status(200).json({
@@ -221,16 +265,20 @@ export const processPayment = async (req, res) => {
 export const vnpayCallback = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
+    console.log("VNPay callback query:", req.query);
     const result = await orderReturnService(req);
+    console.log("VNPay callback result:", result);
     const orderId = req.query.vnp_TxnRef;
 
     const order = await Orders.findByPk(orderId, { transaction });
     if (!order) {
       await transaction.rollback();
+      console.error("Order not found for OrderID:", orderId);
       return res.status(404).json({ error: "Không tìm thấy đơn hàng." });
     }
 
     if (result === 1) {
+      console.log("Processing successful payment for OrderID:", orderId);
       await order.update({ Status: "Paid" }, { transaction });
       const tempItems = await TempOrderItems.findAll({
         where: { OrderID: order.OrderID },
@@ -243,12 +291,21 @@ export const vnpayCallback = async (req, res) => {
         });
         if (!product) {
           await transaction.rollback();
+          console.error("Product not found for ProductID:", item.ProductID);
           return res
             .status(404)
             .json({ error: `Không tìm thấy sản phẩm ${item.ProductID}.` });
         }
         if (product.StockQuantity < item.Quantity) {
           await transaction.rollback();
+          console.error(
+            "Insufficient stock for ProductID:",
+            item.ProductID,
+            "Stock:",
+            product.StockQuantity,
+            "Requested:",
+            item.Quantity
+          );
           return res.status(400).json({
             error: `Không đủ hàng tồn kho cho ${product.ProductName}. Số lượng có sẵn: ${product.StockQuantity}, Số lượng yêu cầu: ${item.Quantity}.`,
           });
@@ -276,21 +333,42 @@ export const vnpayCallback = async (req, res) => {
       });
 
       await transaction.commit();
-      return res.redirect("/payment/success");
+      console.log("Redirecting to success page for OrderID:", orderId);
+      return res.redirect(
+        `http://localhost:5173/payment/success?orderId=${orderId}&status=success`
+      );
     } else {
+      console.log("Processing failed payment for OrderID:", orderId);
+      const failureReason =
+        result === -1
+          ? "Invalid signature"
+          : `TransactionStatus: ${req.query.vnp_TransactionStatus}`;
+      console.log("Failure reason:", failureReason);
       await order.update({ Status: "Cancelled" }, { transaction });
       await TempOrderItems.destroy({
         where: { OrderID: order.OrderID },
         transaction,
       });
       await transaction.commit();
-      return res.redirect("/payment/failed");
+      console.log("Redirecting to failed page for OrderID:", orderId);
+      return res.redirect(
+        `http://localhost:5173/payment/failed?orderId=${orderId}&status=failed&message=${encodeURIComponent(
+          failureReason
+        )}`
+      );
     }
   } catch (error) {
     await transaction.rollback();
-    res
-      .status(500)
-      .json({ error: `Lỗi xử lý callback VNPay: ${error.message}` });
+    console.error(
+      "Lỗi xử lý callback VNPay for OrderID:",
+      req.query.vnp_TxnRef,
+      error
+    );
+    return res.redirect(
+      `http://localhost:5173/payment/failed?orderId=${
+        req.query.vnp_TxnRef || "unknown"
+      }&status=error&message=${encodeURIComponent(error.message)}`
+    );
   }
 };
 
@@ -319,10 +397,7 @@ export const getAllOrders = async (req, res) => {
         "TotalAmount",
         "Status",
         "ShippingAddress",
-        "createdAt",
-        "updatedAt",
       ],
-      order: [["createdAt", "DESC"]],
     });
     res.status(200).json(orders);
   } catch (error) {
@@ -353,8 +428,6 @@ export const getOrderById = async (req, res) => {
         "TotalAmount",
         "Status",
         "ShippingAddress",
-        "createdAt",
-        "updatedAt",
       ],
     });
 
@@ -487,12 +560,10 @@ export const completeOrder = async (req, res) => {
     }
 
     await transaction.commit();
-    res
-      .status(200)
-      .json({
-        message: "Đã hoàn thành đơn hàng thành công.",
-        pointsAdded: points,
-      });
+    res.status(200).json({
+      message: "Đã hoàn thành đơn hàng thành công.",
+      pointsAdded: points,
+    });
   } catch (error) {
     await transaction.rollback();
     res

@@ -3,7 +3,7 @@ import crypto from "crypto";
 export const vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html";
 export const vnp_TmnCode = "T8SG6SXD";
 export const vnp_HashSecret = "VW1YAYDJTCORJOLBHQ9WYYY00MJVNDMO";
-export const vnp_Returnurl = "http://localhost:5173/cart";
+export const vnp_Returnurl = "http://localhost:8080/vnpay/callback";
 
 export const getIpAddress = (req) => {
   return (

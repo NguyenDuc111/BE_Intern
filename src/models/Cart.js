@@ -33,7 +33,7 @@ export default class Cart extends Model {
   }, {
     sequelize,
     tableName: 'Cart',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

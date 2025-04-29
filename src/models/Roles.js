@@ -22,7 +22,7 @@ export default class Roles extends Model {
   }, {
     sequelize,
     tableName: 'Roles',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

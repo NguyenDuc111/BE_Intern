@@ -15,6 +15,7 @@ export const addProduct = async (req, res) => {
       Price,
       StockQuantity,
       ImageURL,
+      Ingredients,
     } = req.body;
 
     // Kiểm tra danh mục
@@ -55,7 +56,8 @@ export const addProduct = async (req, res) => {
         Description,
         Price,
         StockQuantity,
-        ImageURL,
+        Ingredients,
+        ImageURL
       },
       { transaction }
     );
@@ -101,6 +103,7 @@ export const getAllProducts = async (req, res) => {
         "Price",
         "StockQuantity",
         "ImageURL",
+        "Ingredients",
         "CreatedAt",
         "UpdatedAt",
       ],
@@ -133,6 +136,7 @@ export const getProductById = async (req, res) => {
         "Price",
         "StockQuantity",
         "ImageURL",
+        "Ingredients",
         "CreatedAt",
         "UpdatedAt",
       ],
@@ -160,6 +164,7 @@ export const updateProduct = async (req, res) => {
       Price,
       StockQuantity,
       ImageURL,
+      Ingredients,
     } = req.body;
 
     const product = await Products.findByPk(id, { transaction });
@@ -203,6 +208,7 @@ export const updateProduct = async (req, res) => {
         StockQuantity:
           StockQuantity !== undefined ? StockQuantity : product.StockQuantity,
         ImageURL: ImageURL !== undefined ? ImageURL : product.ImageURL,
+        Ingredients: Ingredients !== undefined ? Ingredients : product.Ingredients,
       },
       { transaction }
     );

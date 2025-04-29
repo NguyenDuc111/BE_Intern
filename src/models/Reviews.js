@@ -37,7 +37,7 @@ export default class Reviews extends Model {
   }, {
     sequelize,
     tableName: 'Reviews',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

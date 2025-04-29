@@ -34,7 +34,7 @@ export default class Promotion extends Model {
   }, {
     sequelize,
     tableName: 'Promotion',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

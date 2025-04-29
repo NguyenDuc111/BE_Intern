@@ -33,8 +33,7 @@ export default class TempOrderItems extends Model {
   }, {
     sequelize,
     tableName: 'TempOrderItems',
-    timestamps: true,
-    updatedAt: false, 
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

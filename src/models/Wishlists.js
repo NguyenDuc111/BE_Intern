@@ -29,7 +29,7 @@ export default class Wishlists extends Model {
   }, {
     sequelize,
     tableName: 'Wishlists',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",

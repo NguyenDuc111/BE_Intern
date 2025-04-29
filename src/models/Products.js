@@ -29,11 +29,15 @@ export default class Products extends Model {
     ImageURL: {
       type: DataTypes.STRING(255),
       allowNull: true
+    },
+    Ingredients: {
+      type: DataTypes.TEXT,
+      allowNull: true
     }
   }, {
     sequelize,
     tableName: 'Products',
-    timestamps: true,
+    timestamps: false,
     indexes: [
       {
         name: "PRIMARY",
