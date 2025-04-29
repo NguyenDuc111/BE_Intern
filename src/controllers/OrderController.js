@@ -1,6 +1,6 @@
 import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
-import { Op } from "sequelize"; // Thêm import Op
+import { Op } from "sequelize";
 import {
   createOrderService,
   orderReturnService,
@@ -111,12 +111,12 @@ export const createOrder = async (req, res) => {
     let promotionId = null;
     let discountPercentage = 0;
     if (promotionCode) {
+      console.log(`Looking for promotion with Code: ${promotionCode}`);
       const promotion = await Promotion.findOne({
         where: {
           Code: promotionCode,
-          StartDate: { [Op.lte]: new Date() }, // Sử dụng Op.lte
-          EndDate: { [Op.gte]: new Date() }, // Sử dụng Op.gte
-          DiscountPercentage: { [Op.ne]: null }, // Sử dụng Op.ne
+          StartDate: { [Op.lte]: new Date() },
+          EndDate: { [Op.gte]: new Date() },
         },
         transaction,
       });
@@ -128,15 +128,21 @@ export const createOrder = async (req, res) => {
           transaction,
         });
         if (existingPromotion) {
+          console.log(
+            `Promotion found but expired:`,
+            existingPromotion.toJSON()
+          );
           return res.status(400).json({ error: "Mã khuyến mãi đã hết hạn." });
         }
+        console.log(`No promotion found for Code: ${promotionCode}`);
         return res.status(400).json({ error: "Mã khuyến mãi không hợp lệ." });
       }
 
+      console.log(`Promotion found:`, promotion.toJSON());
       promotionId = promotion.PromotionID;
-      discountPercentage = promotion.DiscountPercentage;
-      discountFromPromotion =
-        (totalAmount * promotion.DiscountPercentage) / 100;
+      discountPercentage = promotion.DiscountPercentage || 0;
+      discountFromPromotion = (totalAmount * discountPercentage) / 100;
+      console.log(`Applied promotion ${promotionCode}: ${discountPercentage}%`);
     }
 
     const finalAmount =
@@ -191,7 +197,7 @@ export const createOrder = async (req, res) => {
     }
 
     await transaction.commit();
-    res.status(201).json({
+    const response = {
       message: "Đã tạo đơn hàng thành công.",
       order,
       items,
@@ -202,7 +208,9 @@ export const createOrder = async (req, res) => {
         finalAmount,
         discountPercentage,
       },
-    });
+    };
+    console.log("Order response:", response);
+    res.status(201).json(response);
   } catch (error) {
     await transaction.rollback();
     console.error("Lỗi khi tạo đơn hàng:", error);
