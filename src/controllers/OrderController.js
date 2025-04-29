@@ -1,6 +1,9 @@
 import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
-import { createOrderService, orderReturnService } from "../config/vnpayService.js";
+import {
+  createOrderService,
+  orderReturnService,
+} from "../config/vnpayService.js";
 
 const models = initModels(sequelize);
 const {
@@ -178,12 +181,13 @@ export const processPayment = async (req, res) => {
     if (paymentMethod === "vnpay") {
       // Tạo URL thanh toán VNPay
       const orderInfo = `Thanh toán đơn hàng #${order.OrderID}`;
-      const returnUrl = "http://localhost:5173/Cart "; 
+      const returnUrl = "http://localhost:5173/Cart ";
       const paymentUrl = await createOrderService(
         req,
         parseInt(order.TotalAmount),
         orderInfo,
-        returnUrl
+        returnUrl,
+        order.OrderID
       );
 
       // Cập nhật trạng thái thành Processing
@@ -217,10 +221,7 @@ export const vnpayCallback = async (req, res) => {
     }
 
     if (result === 1) {
-      // Thanh toán thành công
       await order.update({ Status: "Paid" }, { transaction });
-
-      // Lấy items từ TempOrderItems
       const tempItems = await TempOrderItems.findAll({
         where: { OrderID: order.OrderID },
         transaction,
@@ -243,7 +244,6 @@ export const vnpayCallback = async (req, res) => {
           });
         }
 
-        // Lưu vào OrderDetails
         await OrderDetails.create(
           {
             OrderID: order.OrderID,
@@ -254,14 +254,12 @@ export const vnpayCallback = async (req, res) => {
           { transaction }
         );
 
-        // Giảm số lượng tồn kho
         await product.update(
           { StockQuantity: product.StockQuantity - item.Quantity },
           { transaction }
         );
       }
 
-      // Xóa items tạm
       await TempOrderItems.destroy({
         where: { OrderID: order.OrderID },
         transaction,
@@ -270,7 +268,6 @@ export const vnpayCallback = async (req, res) => {
       await transaction.commit();
       return res.redirect("/payment/success");
     } else {
-      // Thanh toán thất bại
       await order.update({ Status: "Cancelled" }, { transaction });
       await TempOrderItems.destroy({
         where: { OrderID: order.OrderID },

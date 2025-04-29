@@ -56,7 +56,7 @@ export const getWishlist = async (req, res) => {
           attributes: ["ProductID", "ProductName", "Price", "ImageURL"],
         },
       ],
-      attributes: ["WishlistID", "AddedAt"],
+      attributes: ["WishlistID"],
     });
 
     res.status(200).json(wishlists);
