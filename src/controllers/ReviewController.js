@@ -73,8 +73,8 @@ export const getReviewsByProduct = async (req, res) => {
     const reviews = await Reviews.findAll({
       where: { ProductID: productId },
       include: [
-        { model: Users, attributes: ["UserID", "FullName"] },
-        { model: Products, attributes: ["ProductID", "ProductName"] },
+        { model: Users,  as: "User", attributes: ["UserID", "FullName"] },
+        { model: Products,  as: "Product", attributes: ["ProductID", "ProductName"] },
       ],
     });
 
