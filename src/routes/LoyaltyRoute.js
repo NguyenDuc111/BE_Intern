@@ -19,9 +19,9 @@ router.post("/redeem", isAuthenticated, redeemPoints);
 router.get("/point/:userId", isAuthenticated, isAdmin, getUserPointsByAdmin);
 
 //endpoint Sửa bản ghi điểm tích lũy (admin)
-router.put("/point-edit/:loyaltyId", isAuthenticated, isAdmin, updateLoyaltyPoint);
+router.put("/point-edit/:id", isAuthenticated, isAdmin, updateLoyaltyPoint);
 
 //endpoint Xóa bản ghi điểm tích lũy (admin)
-router.delete("/point-del/:loyaltyId", isAuthenticated, isAdmin, deleteLoyaltyPoint);
+router.delete("/point-del/:id", isAuthenticated, isAdmin, deleteLoyaltyPoint);
 
 export default router;

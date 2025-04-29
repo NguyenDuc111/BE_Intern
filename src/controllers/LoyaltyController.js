@@ -117,7 +117,7 @@ export const getUserPointsByAdmin = async (req, res) => {
 
     const points = await LoyaltyPoints.findAll({
       where: { UserID: userId },
-      attributes: ["PointID", "Points", "Description", "CreatedAt"], // Thay EarnedAt thành CreatedAt
+      attributes: ["PointID", "Points", "Description", "CreatedAt"],
       order: [["CreatedAt", "DESC"]],
       include: [
         {
@@ -144,22 +144,40 @@ export const getUserPointsByAdmin = async (req, res) => {
 export const updateLoyaltyPoint = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { pointId } = req.params;
+    const { id } = req.params;
     const { Points, Description } = req.body;
 
-    const loyaltyPoint = await LoyaltyPoints.findByPk(pointId, { transaction });
-    if (!loyaltyPoint) {
+    // Chuyển đổi id thành số nguyên
+    const loyaltyPointId = parseInt(id, 10);
+    if (isNaN(loyaltyPointId)) {
       await transaction.rollback();
-      return res.status(404).json({ error: "Loyalty point record not found." });
+      return res
+        .status(400)
+        .json({ error: "Loyalty point ID must be a valid integer." });
     }
 
-    if (Points === undefined || Points === 0) {
+    // Tìm bản ghi
+    const loyaltyPoint = await LoyaltyPoints.findByPk(loyaltyPointId, {
+      transaction,
+    });
+    if (!loyaltyPoint) {
+      await transaction.rollback();
+      return res
+        .status(404)
+        .json({
+          error: `Loyalty point record with ID ${loyaltyPointId} not found.`,
+        });
+    }
+
+    // Kiểm tra Points
+    if (Points === undefined || typeof Points !== "number" || Points === 0) {
       await transaction.rollback();
       return res
         .status(400)
         .json({ error: "Points must be a non-zero number." });
     }
 
+    // Cập nhật bản ghi
     await loyaltyPoint.update(
       { Points, Description: Description || loyaltyPoint.Description },
       { transaction }
@@ -181,9 +199,9 @@ export const updateLoyaltyPoint = async (req, res) => {
 export const deleteLoyaltyPoint = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { pointId } = req.params;
+    const { id } = req.params;
 
-    const loyaltyPoint = await LoyaltyPoints.findByPk(pointId, { transaction });
+    const loyaltyPoint = await LoyaltyPoints.findByPk(id, { transaction });
     if (!loyaltyPoint) {
       await transaction.rollback();
       return res.status(404).json({ error: "Loyalty point record not found." });

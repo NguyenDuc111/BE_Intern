@@ -15,5 +15,6 @@ router.get("/cart", isAuthenticated, getCart);
 //endpoint chỉnh sửa giỏ hàng
 router.put("/cart-edit/:id", isAuthenticated, updateCart);
 //endpoint xóa giỏ hàng
-router.delete("/del/:cartId", isAuthenticated, deleteFromCart);
+router.delete("/del/:id", isAuthenticated, deleteFromCart);
+
 export default router;

@@ -61,7 +61,7 @@ export const markNotificationAsRead = async (req, res) => {
 export const createNotification = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { UserID, Title, Message } = req.body;
+    const { UserID, Title, Message } = req.body;  
 
     const notification = await Notification.create(
       { UserID, Title, Message, IsRead: false },

@@ -20,7 +20,7 @@ router.get("/order", isAuthenticated, getAllOrders);
 //endpoint xem chi tiết đơn hàng
 router.get("/order/:id", isAuthenticated, getOrderById);
 //endpoint cập nhật đơn hàng
-router.put("/order-update/:id", isAuthenticated, updateOrder);
+router.put("/order-update/:id", isAuthenticated, isAdmin, updateOrder);
 //endpoint xóa đơn hàng (admin)
 router.delete("/order-del/:id", isAuthenticated, isAdmin, deleteOrder);
 //endpoint đơn hàng thành công
