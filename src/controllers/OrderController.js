@@ -384,7 +384,7 @@ export const vnpayCallback = async (req, res) => {
 export const getAllOrders = async (req, res) => {
   try {
     const { UserID, isAdmin } = req.user;
-    let where = {};
+    let where = { Status: "Paid" };
     if (!isAdmin) {
       where.UserID = UserID;
     }
@@ -407,7 +407,7 @@ export const getAllOrders = async (req, res) => {
         "ShippingAddress",
       ],
     });
-    res.status(200).json(orders);
+    res.status(200).json({ data: orders });
   } catch (error) {
     res
       .status(500)
