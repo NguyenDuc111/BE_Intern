@@ -13,7 +13,7 @@ const router = express.Router();
 //endpoint tạo đánh giá
 router.post("/review-add", isAuthenticated, createReview);
 //endpoint lấy đánh giá theo ID sản phẩm
-router.get("/review/product/:productId", getReviewsByProduct);
+router.get("/review/product/:id", getReviewsByProduct);
 //endpoint cập nhật đánh giá
 router.put("/review-update/:id", isAuthenticated, updateReview);
 //endpoint xóa đánh giá (của riêng người dùng hoặc admin)

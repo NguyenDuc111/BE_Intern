@@ -70,10 +70,10 @@ export const createReview = async (req, res) => {
 // Lấy tất cả đánh giá của một sản phẩm
 export const getReviewsByProduct = async (req, res) => {
   try {
-    const { productId } = req.params;
+    const { id } = req.params;
 
     const reviews = await Reviews.findAll({
-      where: { ProductID: productId },
+      where: { ProductID: id },
       include: [
         { model: Users, as: "User", attributes: ["UserID", "FullName"] },
         {

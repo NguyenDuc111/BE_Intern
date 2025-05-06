@@ -17,8 +17,18 @@ import StatisticsRoute from "./routes/StatisticsRoute.js";
 import sequelize from "../src/config/db.js";
 import initModels from "../src/models/init-models.js";
 import HookRoute from "./routes/HookRoute.js";
-
+import VoucherRoute from "./routes/VoucherRoute.js";
 const app = express();
+
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST"],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization']
+  })
+);
+app.use(express.json());
 
 // Khởi tạo models
 const models = initModels(sequelize);
@@ -42,5 +52,6 @@ app.use(WishlistRoute);
 app.use(LoyaltyRoute);
 app.use(StatisticsRoute);
 app.use(HookRoute);
+app.use(VoucherRoute);
 
 app.listen(8080);

@@ -9,11 +9,14 @@ import _Orders from "./Orders.js";
 import _ProductCategories from "./ProductCategories.js";
 import _Products from "./Products.js";
 import _Promotion from "./Promotion.js";
+import _RedemptionHistory from "./RedemptionHistory.js";
 import _ResetToken from "./ResetToken.js";
 import _Reviews from "./Reviews.js";
 import _Roles from "./Roles.js";
 import _TempOrderItems from "./TempOrderItems.js";
+import _UserVouchers from "./UserVouchers.js";
 import _Users from "./Users.js";
+import _Vouchers from "./Vouchers.js";
 import _Wishlists from "./Wishlists.js";
 
 export default function initModels(sequelize) {
@@ -26,11 +29,14 @@ export default function initModels(sequelize) {
   const ProductCategories = _ProductCategories.init(sequelize, DataTypes);
   const Products = _Products.init(sequelize, DataTypes);
   const Promotion = _Promotion.init(sequelize, DataTypes);
+  const RedemptionHistory = _RedemptionHistory.init(sequelize, DataTypes);
   const ResetToken = _ResetToken.init(sequelize, DataTypes);
   const Reviews = _Reviews.init(sequelize, DataTypes);
   const Roles = _Roles.init(sequelize, DataTypes);
   const TempOrderItems = _TempOrderItems.init(sequelize, DataTypes);
+  const UserVouchers = _UserVouchers.init(sequelize, DataTypes);
   const Users = _Users.init(sequelize, DataTypes);
+  const Vouchers = _Vouchers.init(sequelize, DataTypes);
   const Wishlists = _Wishlists.init(sequelize, DataTypes);
 
   Categories.belongsToMany(Products, {
@@ -75,6 +81,14 @@ export default function initModels(sequelize) {
     as: "ProductCategories",
     foreignKey: "ProductID",
   });
+  RedemptionHistory.belongsTo(Products, {
+    as: "Product",
+    foreignKey: "ProductID",
+  });
+  Products.hasMany(RedemptionHistory, {
+    as: "RedemptionHistories",
+    foreignKey: "ProductID",
+  });
   Reviews.belongsTo(Products, { as: "Product", foreignKey: "ProductID" });
   Products.hasMany(Reviews, { as: "Reviews", foreignKey: "ProductID" });
   TempOrderItems.belongsTo(Products, {
@@ -99,12 +113,32 @@ export default function initModels(sequelize) {
   Users.hasMany(Notification, { as: "Notifications", foreignKey: "UserID" });
   Orders.belongsTo(Users, { as: "User", foreignKey: "UserID" });
   Users.hasMany(Orders, { as: "Orders", foreignKey: "UserID" });
+  RedemptionHistory.belongsTo(Users, { as: "User", foreignKey: "UserID" });
+  Users.hasMany(RedemptionHistory, {
+    as: "RedemptionHistories",
+    foreignKey: "UserID",
+  });
   ResetToken.belongsTo(Users, { as: "User", foreignKey: "UserID" });
   Users.hasMany(ResetToken, { as: "ResetTokens", foreignKey: "UserID" });
   Reviews.belongsTo(Users, { as: "User", foreignKey: "UserID" });
   Users.hasMany(Reviews, { as: "Reviews", foreignKey: "UserID" });
+  UserVouchers.belongsTo(Users, { as: "User", foreignKey: "UserID" });
+  Users.hasMany(UserVouchers, { as: "UserVouchers", foreignKey: "UserID" });
   Wishlists.belongsTo(Users, { as: "User", foreignKey: "UserID" });
   Users.hasMany(Wishlists, { as: "Wishlists", foreignKey: "UserID" });
+  RedemptionHistory.belongsTo(Vouchers, {
+    as: "Voucher",
+    foreignKey: "VoucherID",
+  });
+  Vouchers.hasMany(RedemptionHistory, {
+    as: "RedemptionHistories",
+    foreignKey: "VoucherID",
+  });
+  UserVouchers.belongsTo(Vouchers, { as: "Voucher", foreignKey: "VoucherID" });
+  Vouchers.hasMany(UserVouchers, {
+    as: "UserVouchers",
+    foreignKey: "VoucherID",
+  });
 
   return {
     Cart,
@@ -116,11 +150,14 @@ export default function initModels(sequelize) {
     ProductCategories,
     Products,
     Promotion,
+    RedemptionHistory,
     ResetToken,
     Reviews,
     Roles,
     TempOrderItems,
+    UserVouchers,
     Users,
+    Vouchers,
     Wishlists,
   };
 }
