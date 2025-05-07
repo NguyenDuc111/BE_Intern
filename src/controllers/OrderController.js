@@ -12,9 +12,10 @@ const {
   OrderDetails,
   Products,
   LoyaltyPoints,
-  Promotion,
   Cart,
   TempOrderItems,
+  UserVouchers,
+  Vouchers,
 } = models;
 
 // Tạo đơn hàng mới
@@ -22,19 +23,9 @@ export const createOrder = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const { UserID } = req.user;
-    const { items, pointsUsed, promotionCode, cartItemIds, shippingAddress } =
+    const { items, pointsUsed, voucherCode, cartItemIds, shippingAddress } =
       req.body;
 
-    console.log("Received order data:", {
-      UserID,
-      items,
-      pointsUsed,
-      promotionCode,
-      cartItemIds,
-      shippingAddress,
-    });
-
-    // Kiểm tra items
     if (!items || !Array.isArray(items) || items.length === 0) {
       await transaction.rollback();
       return res
@@ -42,13 +33,11 @@ export const createOrder = async (req, res) => {
         .json({ error: "Mảng sản phẩm là bắt buộc và không được rỗng." });
     }
 
-    // Kiểm tra shippingAddress
     if (!shippingAddress || typeof shippingAddress !== "string") {
       await transaction.rollback();
       return res.status(400).json({ error: "Địa chỉ giao hàng là bắt buộc." });
     }
 
-    // Kiểm tra pointsUsed
     if (!Number.isInteger(pointsUsed) || pointsUsed < 0) {
       await transaction.rollback();
       return res.status(400).json({ error: "Số điểm sử dụng không hợp lệ." });
@@ -106,47 +95,52 @@ export const createOrder = async (req, res) => {
       );
     }
 
-    // Áp dụng mã khuyến mãi
-    let discountFromPromotion = 0;
-    let promotionId = null;
-    let discountPercentage = 0;
-    if (promotionCode) {
-      console.log(`Looking for promotion with Code: ${promotionCode}`);
-      const promotion = await Promotion.findOne({
-        where: {
-          Code: promotionCode,
-          StartDate: { [Op.lte]: new Date() },
-          EndDate: { [Op.gte]: new Date() },
-        },
+    // Áp dụng mã voucher
+    let discountFromVoucher = 0;
+    let isPercentage = false;
+    let userVoucher = null;
+    if (voucherCode) {
+      userVoucher = await UserVouchers.findOne({
+        where: { UserID, Code: voucherCode },
+        include: [{ model: Vouchers, as: "Voucher" }],
         transaction,
       });
 
-      if (!promotion) {
+      if (!userVoucher) {
         await transaction.rollback();
-        const existingPromotion = await Promotion.findOne({
-          where: { Code: promotionCode },
-          transaction,
+        return res.status(400).json({ error: "Mã voucher không hợp lệ." });
+      }
+      if (userVoucher.Status !== "active") {
+        await transaction.rollback();
+        return res.status(400).json({
+          error: `Mã voucher đã ${
+            userVoucher.Status === "used" ? "được sử dụng hết" : "hết hạn"
+          }.`,
         });
-        if (existingPromotion) {
-          console.log(
-            `Promotion found but expired:`,
-            existingPromotion.toJSON()
-          );
-          return res.status(400).json({ error: "Mã khuyến mãi đã hết hạn." });
-        }
-        console.log(`No promotion found for Code: ${promotionCode}`);
-        return res.status(400).json({ error: "Mã khuyến mãi không hợp lệ." });
+      }
+      if (new Date(userVoucher.ExpiryDate) < new Date()) {
+        await userVoucher.update({ Status: "expired" }, { transaction });
+        await transaction.rollback();
+        return res.status(400).json({ error: "Mã voucher đã hết hạn." });
+      }
+      if (userVoucher.UsageCount >= userVoucher.Voucher.UsageLimit) {
+        await userVoucher.update({ Status: "used" }, { transaction });
+        await transaction.rollback();
+        return res
+          .status(400)
+          .json({ error: "Mã voucher đã đạt giới hạn sử dụng." });
       }
 
-      console.log(`Promotion found:`, promotion.toJSON());
-      promotionId = promotion.PromotionID;
-      discountPercentage = promotion.DiscountPercentage || 0;
-      discountFromPromotion = (totalAmount * discountPercentage) / 100;
-      console.log(`Applied promotion ${promotionCode}: ${discountPercentage}%`);
+      discountFromVoucher = userVoucher.Voucher.DiscountValue;
+      isPercentage = userVoucher.Voucher.DiscountValue <= 100;
     }
 
     const finalAmount =
-      totalAmount - discountFromPoints - discountFromPromotion;
+      totalAmount -
+      discountFromPoints -
+      (isPercentage
+        ? (totalAmount * discountFromVoucher) / 100
+        : discountFromVoucher);
     if (finalAmount < 0) {
       await transaction.rollback();
       return res
@@ -158,10 +152,12 @@ export const createOrder = async (req, res) => {
     const order = await Orders.create(
       {
         UserID,
-        PromotionID: promotionId,
+        VoucherCode: voucherCode || null,
         TotalAmount: parseFloat(finalAmount.toFixed(2)),
         Status: "Pending",
         ShippingAddress: shippingAddress,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       },
       { transaction }
     );
@@ -204,12 +200,12 @@ export const createOrder = async (req, res) => {
       priceDetails: {
         totalAmountBeforeDiscount: totalAmount,
         discountFromPoints,
-        discountFromPromotion,
+        discountFromVoucher: isPercentage
+          ? (totalAmount * discountFromVoucher) / 100
+          : discountFromVoucher,
         finalAmount,
-        discountPercentage,
       },
     };
-    console.log("Order response:", response);
     res.status(201).json(response);
   } catch (error) {
     await transaction.rollback();
@@ -218,7 +214,7 @@ export const createOrder = async (req, res) => {
   }
 };
 
-// Xử lý thanh toán với VNPay
+// Xử lý thanh toán với VNPay hoặc COD
 export const processPayment = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
@@ -238,56 +234,8 @@ export const processPayment = async (req, res) => {
         .json({ error: "Không có quyền truy cập vào đơn hàng." });
     }
 
-    if (paymentMethod === "vnpay") {
-      const orderInfo = `Thanh toán đơn hàng #${order.OrderID}`;
-      const returnUrl = "http://localhost:8080/vnpay/callback";
-      const paymentUrl = await createOrderService(
-        req,
-        parseInt(order.TotalAmount),
-        orderInfo,
-        returnUrl,
-        order.OrderID
-      );
-
-      await order.update({ Status: "Processing" }, { transaction });
-      await transaction.commit();
-      return res.status(200).json({
-        message: "Chuyển hướng đến trang thanh toán VNPay",
-        payUrl: paymentUrl,
-      });
-    } else {
-      await transaction.rollback();
-      return res
-        .status(400)
-        .json({ error: "Phương thức thanh toán không hợp lệ." });
-    }
-  } catch (error) {
-    await transaction.rollback();
-    res
-      .status(500)
-      .json({ error: `Lỗi khi xử lý thanh toán: ${error.message}` });
-  }
-};
-
-// Xử lý callback từ VNPay
-export const vnpayCallback = async (req, res) => {
-  const transaction = await sequelize.transaction();
-  try {
-    console.log("VNPay callback query:", req.query);
-    const result = await orderReturnService(req);
-    console.log("VNPay callback result:", result);
-    const orderId = req.query.vnp_TxnRef;
-
-    const order = await Orders.findByPk(orderId, { transaction });
-    if (!order) {
-      await transaction.rollback();
-      console.error("Order not found for OrderID:", orderId);
-      return res.status(404).json({ error: "Không tìm thấy đơn hàng." });
-    }
-
-    if (result === 1) {
-      console.log("Processing successful payment for OrderID:", orderId);
-      await order.update({ Status: "Paid" }, { transaction });
+    if (paymentMethod === "cod") {
+      // For COD, set status to Paid and update voucher
       const tempItems = await TempOrderItems.findAll({
         where: { OrderID: order.OrderID },
         transaction,
@@ -299,21 +247,12 @@ export const vnpayCallback = async (req, res) => {
         });
         if (!product) {
           await transaction.rollback();
-          console.error("Product not found for ProductID:", item.ProductID);
           return res
             .status(404)
             .json({ error: `Không tìm thấy sản phẩm ${item.ProductID}.` });
         }
         if (product.StockQuantity < item.Quantity) {
           await transaction.rollback();
-          console.error(
-            "Insufficient stock for ProductID:",
-            item.ProductID,
-            "Stock:",
-            product.StockQuantity,
-            "Requested:",
-            item.Quantity
-          );
           return res.status(400).json({
             error: `Không đủ hàng tồn kho cho ${product.ProductName}. Số lượng có sẵn: ${product.StockQuantity}, Số lượng yêu cầu: ${item.Quantity}.`,
           });
@@ -340,38 +279,173 @@ export const vnpayCallback = async (req, res) => {
         transaction,
       });
 
+      // Update voucher if used
+      if (order.VoucherCode) {
+        const userVoucher = await UserVouchers.findOne({
+          where: { UserID, Code: order.VoucherCode },
+          include: [{ model: Vouchers, as: "Voucher" }],
+          transaction,
+        });
+
+        if (userVoucher && userVoucher.Status === "active") {
+          await userVoucher.update(
+            { UsageCount: userVoucher.UsageCount + 1 },
+            { transaction }
+          );
+          if (userVoucher.UsageCount + 1 >= userVoucher.Voucher.UsageLimit) {
+            await userVoucher.update({ Status: "used" }, { transaction });
+          }
+        }
+      }
+
+      // Update order status to Paid
+      await order.update(
+        { Status: "Paid", updatedAt: new Date() },
+        { transaction }
+      );
+
       await transaction.commit();
-      console.log("Redirecting to success page for OrderID:", orderId);
+      return res.status(200).json({
+        message: "Đặt hàng COD thành công.",
+        order,
+      });
+    } else if (paymentMethod === "vnpay") {
+      const orderInfo = `Thanh toán đơn hàng #${order.OrderID}`;
+      const returnUrl = "http://localhost:8080/vnpay/callback";
+      const paymentUrl = await createOrderService(
+        req,
+        parseInt(order.TotalAmount),
+        orderInfo,
+        returnUrl,
+        order.OrderID
+      );
+
+      await order.update(
+        { Status: "Processing", updatedAt: new Date() },
+        { transaction }
+      );
+      await transaction.commit();
+      return res.status(200).json({
+        message: "Chuyển hướng đến trang thanh toán VNPay",
+        payUrl: paymentUrl,
+      });
+    } else {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ error: "Phương thức thanh toán không hợp lệ." });
+    }
+  } catch (error) {
+    await transaction.rollback();
+    res
+      .status(500)
+      .json({ error: `Lỗi khi xử lý thanh toán: ${error.message}` });
+  }
+};
+
+// Xử lý callback từ VNPay
+export const vnpayCallback = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  try {
+    const result = await orderReturnService(req);
+    const orderId = req.query.vnp_TxnRef;
+
+    const order = await Orders.findByPk(orderId, { transaction });
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({ error: "Không tìm thấy đơn hàng." });
+    }
+
+    if (result === 1) {
+      const tempItems = await TempOrderItems.findAll({
+        where: { OrderID: order.OrderID },
+        transaction,
+      });
+
+      for (const item of tempItems) {
+        const product = await Products.findByPk(item.ProductID, {
+          transaction,
+        });
+        if (!product) {
+          await transaction.rollback();
+          return res
+            .status(404)
+            .json({ error: `Không tìm thấy sản phẩm ${item.ProductID}.` });
+        }
+        if (product.StockQuantity < item.Quantity) {
+          await transaction.rollback();
+          return res.status(400).json({
+            error: `Không đủ hàng tồn kho cho ${product.ProductName}. Số lượng có sẵn: ${product.StockQuantity}, Số lượng yêu cầu: ${item.Quantity}.`,
+          });
+        }
+
+        await OrderDetails.create(
+          {
+            OrderID: order.OrderID,
+            ProductID: item.ProductID,
+            Quantity: item.Quantity,
+            UnitPrice: product.Price,
+          },
+          { transaction }
+        );
+
+        await product.update(
+          { StockQuantity: product.StockQuantity - item.Quantity },
+          { transaction }
+        );
+      }
+
+      await TempOrderItems.destroy({
+        where: { OrderID: order.OrderID },
+        transaction,
+      });
+
+      // Update voucher if used
+      if (order.VoucherCode) {
+        const userVoucher = await UserVouchers.findOne({
+          where: { UserID: order.UserID, Code: order.VoucherCode },
+          include: [{ model: Vouchers, as: "Voucher" }],
+          transaction,
+        });
+
+        if (userVoucher && userVoucher.Status === "active") {
+          await userVoucher.update(
+            { UsageCount: userVoucher.UsageCount + 1 },
+            { transaction }
+          );
+          if (userVoucher.UsageCount + 1 >= userVoucher.Voucher.UsageLimit) {
+            await userVoucher.update({ Status: "used" }, { transaction });
+          }
+        }
+      }
+
+      await order.update(
+        { Status: "Paid", updatedAt: new Date() },
+        { transaction }
+      );
+
+      await transaction.commit();
       return res.redirect(
         `http://localhost:5173/payment/success?orderId=${orderId}&status=success`
       );
     } else {
-      console.log("Processing failed payment for OrderID:", orderId);
-      const failureReason =
-        result === -1
-          ? "Invalid signature"
-          : `TransactionStatus: ${req.query.vnp_TransactionStatus}`;
-      console.log("Failure reason:", failureReason);
-      await order.update({ Status: "Cancelled" }, { transaction });
+      await order.update(
+        { Status: "Cancelled", updatedAt: new Date() },
+        { transaction }
+      );
       await TempOrderItems.destroy({
         where: { OrderID: order.OrderID },
         transaction,
       });
       await transaction.commit();
-      console.log("Redirecting to failed page for OrderID:", orderId);
       return res.redirect(
         `http://localhost:5173/payment/failed?orderId=${orderId}&status=failed&message=${encodeURIComponent(
-          failureReason
+          result === -1 ? "Invalid signature" : "Giao dịch VNPay thất bại"
         )}`
       );
     }
   } catch (error) {
     await transaction.rollback();
-    console.error(
-      "Lỗi xử lý callback VNPay for OrderID:",
-      req.query.vnp_TxnRef,
-      error
-    );
     return res.redirect(
       `http://localhost:5173/payment/failed?orderId=${
         req.query.vnp_TxnRef || "unknown"
@@ -384,6 +458,7 @@ export const vnpayCallback = async (req, res) => {
 export const getAllOrders = async (req, res) => {
   try {
     const { UserID, isAdmin } = req.user;
+    const where = {};
     if (!isAdmin) {
       where.UserID = UserID;
     }
@@ -400,7 +475,7 @@ export const getAllOrders = async (req, res) => {
       attributes: [
         "OrderID",
         "UserID",
-        "PromotionID",
+        "VoucherCode",
         "TotalAmount",
         "Status",
         "ShippingAddress",
@@ -408,6 +483,7 @@ export const getAllOrders = async (req, res) => {
     });
     res.status(200).json({ data: orders });
   } catch (error) {
+    console.error("Lỗi khi lấy danh sách đơn hàng:", error);
     res
       .status(500)
       .json({ error: `Lỗi khi lấy danh sách đơn hàng: ${error.message}` });
@@ -431,7 +507,7 @@ export const getOrderById = async (req, res) => {
       attributes: [
         "OrderID",
         "UserID",
-        "PromotionID",
+        "VoucherCode",
         "TotalAmount",
         "Status",
         "ShippingAddress",
@@ -450,6 +526,7 @@ export const getOrderById = async (req, res) => {
 
     res.status(200).json(order);
   } catch (error) {
+    console.error("Lỗi khi lấy chi tiết đơn hàng:", error);
     res
       .status(500)
       .json({ error: `Lỗi khi lấy chi tiết đơn hàng: ${error.message}` });
@@ -488,9 +565,29 @@ export const updateOrder = async (req, res) => {
         TotalAmount:
           TotalAmount !== undefined ? TotalAmount : order.TotalAmount,
         ShippingAddress: ShippingAddress || order.ShippingAddress,
+        updatedAt: new Date(),
       },
       { transaction }
     );
+
+    // Update voucher if status changes to Paid
+    if (Status === "Paid" && order.VoucherCode) {
+      const userVoucher = await UserVouchers.findOne({
+        where: { UserID: order.UserID, Code: order.VoucherCode },
+        include: [{ model: Vouchers, as: "Voucher" }],
+        transaction,
+      });
+
+      if (userVoucher && userVoucher.Status === "active") {
+        await userVoucher.update(
+          { UsageCount: userVoucher.UsageCount + 1 },
+          { transaction }
+        );
+        if (userVoucher.UsageCount + 1 >= userVoucher.Voucher.UsageLimit) {
+          await userVoucher.update({ Status: "used" }, { transaction });
+        }
+      }
+    }
 
     await transaction.commit();
     res
@@ -498,6 +595,7 @@ export const updateOrder = async (req, res) => {
       .json({ message: "Đã cập nhật đơn hàng thành công.", order });
   } catch (error) {
     await transaction.rollback();
+    console.error("Lỗi khi cập nhật đơn hàng:", error);
     res
       .status(500)
       .json({ error: `Lỗi khi cập nhật đơn hàng: ${error.message}` });
@@ -524,6 +622,7 @@ export const deleteOrder = async (req, res) => {
     res.status(200).json({ message: "Đã xóa đơn hàng thành công." });
   } catch (error) {
     await transaction.rollback();
+    console.error("Lỗi khi xóa đơn hàng:", error);
     res.status(500).json({ error: `Lỗi khi xóa đơn hàng: ${error.message}` });
   }
 };
@@ -552,7 +651,29 @@ export const completeOrder = async (req, res) => {
         .json({ error: "Không thể hoàn thành đơn hàng đã bị hủy." });
     }
 
-    await order.update({ Status: "Paid" }, { transaction });
+    await order.update(
+      { Status: "Paid", updatedAt: new Date() },
+      { transaction }
+    );
+
+    // Update voucher if used
+    if (order.VoucherCode) {
+      const userVoucher = await UserVouchers.findOne({
+        where: { UserID: order.UserID, Code: order.VoucherCode },
+        include: [{ model: Vouchers, as: "Voucher" }],
+        transaction,
+      });
+
+      if (userVoucher && userVoucher.Status === "active") {
+        await userVoucher.update(
+          { UsageCount: userVoucher.UsageCount + 1 },
+          { transaction }
+        );
+        if (userVoucher.UsageCount + 1 >= userVoucher.Voucher.UsageLimit) {
+          await userVoucher.update({ Status: "used" }, { transaction });
+        }
+      }
+    }
 
     const points = Math.floor(order.TotalAmount / 100000);
     if (points > 0) {
@@ -573,6 +694,7 @@ export const completeOrder = async (req, res) => {
     });
   } catch (error) {
     await transaction.rollback();
+    console.error("Lỗi khi hoàn thành đơn hàng:", error);
     res
       .status(500)
       .json({ error: `Lỗi khi hoàn thành đơn hàng: ${error.message}` });
