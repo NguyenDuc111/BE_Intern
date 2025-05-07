@@ -156,8 +156,6 @@ export const createOrder = async (req, res) => {
         TotalAmount: parseFloat(finalAmount.toFixed(2)),
         Status: "Pending",
         ShippingAddress: shippingAddress,
-        createdAt: new Date(),
-        updatedAt: new Date(),
       },
       { transaction }
     );

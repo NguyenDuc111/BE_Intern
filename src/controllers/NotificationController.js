@@ -15,8 +15,8 @@ export const getNotifications = async (req, res) => {
       where: {
         [Op.or]: [{ UserID }, { UserID: null }],
       },
-      attributes: ["NotificationID", "Title", "Message", "IsRead", "CreatedAt"],
-      order: [["CreatedAt", "DESC"]],
+      attributes: ["NotificationID", "Title", "Message", "IsRead"],
+      order: [["NotificationID", "DESC"]],
     });
 
     res.status(200).json(notifications);
@@ -90,7 +90,7 @@ export const getAllNotifications = async (req, res) => {
           required: false,
         },
       ],
-      attributes: ["NotificationID", "Title", "Message", "IsRead", "CreatedAt"],
+      attributes: ["NotificationID", "Title", "Message", "IsRead"],
     });
     res.status(200).json(notification);
   } catch (error) {

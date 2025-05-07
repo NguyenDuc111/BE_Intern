@@ -10,8 +10,8 @@ export const getLoyaltyPoints = async (req, res) => {
     const { UserID } = req.user;
     const points = await LoyaltyPoints.findAll({
       where: { UserID },
-      attributes: ["PointID", "Points", "Description", "CreatedAt"],
-      order: [["CreatedAt", "DESC"]],
+      attributes: ["PointID", "Points", "Description"],
+      order: [[ "PointID","DESC"]],
     });
     const totalPoints = points.reduce((sum, point) => sum + point.Points, 0);
     res.status(200).json({ totalPoints, history: points });
@@ -117,8 +117,8 @@ export const getUserPointsByAdmin = async (req, res) => {
 
     const points = await LoyaltyPoints.findAll({
       where: { UserID: userId },
-      attributes: ["PointID", "Points", "Description", "CreatedAt"],
-      order: [["CreatedAt", "DESC"]],
+      attributes: ["PointID", "Points", "Description"],
+      order: [[ "DESC"]],
       include: [
         {
           model: Users,

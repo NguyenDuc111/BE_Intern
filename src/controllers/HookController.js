@@ -32,7 +32,7 @@ export const handleWebhook = async (req, res) => {
         const productsIngredients = await Products.findAll({
           limit: 3,
           attributes: ["ProductName", "Ingredients", "imageUrl"],
-          order: [["CreatedAt", "DESC"]],
+          order: [[ "DESC"]],
         });
         if (!productsIngredients || productsIngredients.length === 0) {
           console.log("No products found for ingredients");
@@ -60,7 +60,7 @@ export const handleWebhook = async (req, res) => {
         const productsPricing = await Products.findAll({
           limit: 3,
           attributes: ["ProductName", "Price", "imageUrl"],
-          order: [["CreatedAt", "DESC"]],
+          order: [[ "DESC"]],
         });
         if (!productsPricing || productsPricing.length === 0) {
           console.log("No products found for pricing");
@@ -197,7 +197,7 @@ export const handleWebhook = async (req, res) => {
 
       case "delivery_tracking":
         const sampleOrder = await Orders.findOne({
-          order: [["CreatedAt", "DESC"]],
+          order: [[ "DESC"]],
         });
         if (!sampleOrder) {
           console.log("No orders found for tracking example");
@@ -220,7 +220,7 @@ export const handleWebhook = async (req, res) => {
         const productsShelfLife = await Products.findAll({
           limit: 3,
           attributes: ["ProductName"],
-          order: [["CreatedAt", "DESC"]],
+          order: [[ "DESC"]],
         });
         if (!productsShelfLife || productsShelfLife.length === 0) {
           console.log("No products found for shelf life");

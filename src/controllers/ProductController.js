@@ -104,8 +104,6 @@ export const getAllProducts = async (req, res) => {
         "StockQuantity",
         "ImageURL",
         "Ingredients",
-        "CreatedAt",
-        "UpdatedAt",
       ],
     });
     res.status(200).json(products);
@@ -137,8 +135,7 @@ export const getProductById = async (req, res) => {
         "StockQuantity",
         "ImageURL",
         "Ingredients",
-        "CreatedAt",
-        "UpdatedAt",
+        
       ],
     });
     if (!product) {

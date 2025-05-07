@@ -38,6 +38,14 @@ export default class Orders extends Model {
     ShippingAddress: {
       type: DataTypes.TEXT,
       allowNull: true
+    },
+    VoucherCode: {
+      type: DataTypes.STRING(6),
+      allowNull: true,
+      references: {
+        model: 'UserVouchers',
+        key: 'Code'
+      }
     }
   }, {
     sequelize,
@@ -64,6 +72,13 @@ export default class Orders extends Model {
         using: "BTREE",
         fields: [
           { name: "PromotionID" },
+        ]
+      },
+      {
+        name: "Orders_ibfk_3",
+        using: "BTREE",
+        fields: [
+          { name: "VoucherCode" },
         ]
       },
     ]

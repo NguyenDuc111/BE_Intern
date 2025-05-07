@@ -23,7 +23,7 @@ export default class RedemptionHistory extends Model {
       allowNull: false
     },
     RedemptionType: {
-      type: DataTypes.ENUM('voucher','gift'),
+      type: DataTypes.STRING(50),
       allowNull: false
     },
     VoucherID: {
@@ -42,15 +42,10 @@ export default class RedemptionHistory extends Model {
         key: 'ProductID'
       }
     },
-    RedemptionDate: {
-      type: DataTypes.DATE,
-      allowNull: true,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
-    },
     Status: {
-      type: DataTypes.ENUM('pending','completed','cancelled'),
+      type: DataTypes.ENUM('pending','completed','failed'),
       allowNull: true,
-      defaultValue: "pending"
+      defaultValue: "completed"
     }
   }, {
     sequelize,

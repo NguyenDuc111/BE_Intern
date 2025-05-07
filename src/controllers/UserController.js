@@ -19,8 +19,6 @@ export const getAllUsers = async (req, res) => {
         "Email",
         "Phone",
         "Address",
-        "CreatedAt",
-        "UpdatedAt",
       ],
     });
 
@@ -45,8 +43,6 @@ export const getUserById = async (req, res) => {
         "Email",
         "Phone",
         "Address",
-        "CreatedAt",
-        "UpdatedAt",
       ],
     });
 

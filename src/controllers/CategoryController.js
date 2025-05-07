@@ -13,8 +13,6 @@ export const getAllCategories = async (req, res) => {
         "CategoryName",
         "Description",
         "ImageURL",
-        "createdAt",
-        "updatedAt",
         [
           sequelize.fn("COUNT", sequelize.col("Products.ProductID")),
           "productCount",

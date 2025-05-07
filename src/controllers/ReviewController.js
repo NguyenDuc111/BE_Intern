@@ -16,7 +16,7 @@ export const getAllReviews = async (req, res) => {
           attributes: ["ProductID", "ProductName"],
         },
       ],
-      attributes: ["ReviewID", "Rating", "Comment", "CreatedAt", "UpdatedAt"],
+      attributes: ["ReviewID", "Rating", "Comment"],
     });
     res.status(200).json(reviews);
   } catch (error) {
