@@ -5,7 +5,6 @@ import { Op } from "sequelize";
 const models = initModels(sequelize);
 const { Vouchers, UserVouchers, LoyaltyPoints, UserRedemptionLimits } = models;
 
-// Tạo mã ngẫu nhiên 6 ký tự chữ và số
 const generateRandomCode = async (attempts = 0) => {
   if (attempts >= 10) {
     throw new Error("Không thể tạo mã duy nhất sau 10 lần thử.");
@@ -22,7 +21,6 @@ const generateRandomCode = async (attempts = 0) => {
   return code;
 };
 
-// Lấy danh sách tất cả voucher có sẵn
 export const getAvailableVouchers = async (req, res) => {
   try {
     const { UserID } = req.user;
@@ -51,6 +49,7 @@ export const getAvailableVouchers = async (req, res) => {
         pointsRequired: v.PointsRequired,
         redemptionLimit: v.RedemptionLimit,
         expiryDays: v.ExpiryDays,
+        minOrderValue: v.MinOrderValue,
         redemptionsRemaining:
           v.RedemptionLimit - (redemptionCounts[v.VoucherID] || 0),
       })),
@@ -65,7 +64,6 @@ export const getAvailableVouchers = async (req, res) => {
   }
 };
 
-// Đổi điểm lấy voucher
 export const redeemVoucher = async (req, res) => {
   const { voucherId } = req.body;
   const { UserID } = req.user;
@@ -89,7 +87,6 @@ export const redeemVoucher = async (req, res) => {
         return res.status(404).json({ message: "Voucher không tồn tại." });
       }
 
-      // Khóa hoặc tạo bản ghi UserRedemptionLimits
       let userRedemption = await UserRedemptionLimits.findOne({
         where: { UserID, VoucherID: voucherId },
         transaction: t,
@@ -121,7 +118,7 @@ export const redeemVoucher = async (req, res) => {
       }
 
       const randomCode = await generateRandomCode();
-      const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // Hết hạn sau 30 ngày
+      const expiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
       await UserVouchers.create(
         {
@@ -166,13 +163,12 @@ export const redeemVoucher = async (req, res) => {
   }
 };
 
-// Áp dụng voucher trong giỏ hàng (chỉ xác thực, mỗi Code dùng 1 lần)
 export const applyVoucher = async (req, res) => {
   if (!req.body) {
     return res.status(400).json({ message: "Yêu cầu không có body." });
   }
 
-  const { voucherCode } = req.body;
+  const { voucherCode, totalAmount, pointsUsed } = req.body;
   const { UserID } = req.user;
 
   if (!UserID) {
@@ -183,6 +179,12 @@ export const applyVoucher = async (req, res) => {
 
   if (!voucherCode) {
     return res.status(400).json({ message: "Yêu cầu cung cấp mã voucher." });
+  }
+
+  if (!totalAmount || typeof totalAmount !== "number" || totalAmount <= 0) {
+    return res
+      .status(400)
+      .json({ message: "Yêu cầu cung cấp tổng giá đơn hàng hợp lệ." });
   }
 
   try {
@@ -216,12 +218,39 @@ export const applyVoucher = async (req, res) => {
       return res.status(400).json({ message: "Mã voucher đã được sử dụng." });
     }
 
+    if (userVoucher.Voucher.MinOrderValue > totalAmount) {
+      return res.status(400).json({
+        message: `Đơn hàng cần tối thiểu ${userVoucher.Voucher.MinOrderValue.toLocaleString()}₫ để sử dụng voucher này.`,
+      });
+    }
+
+    let discountFromVoucher = 0;
+    if (userVoucher.Voucher.DiscountValue <= 100) {
+      discountFromVoucher =
+        (totalAmount * userVoucher.Voucher.DiscountValue) / 100;
+    } else {
+      discountFromVoucher = userVoucher.Voucher.DiscountValue;
+    }
+
+    const discountFromPoints = (pointsUsed || 0) * 1000;
+    const finalAmount = Math.max(
+      0,
+      totalAmount - discountFromVoucher - discountFromPoints
+    );
+
+    if (finalAmount < 20000) {
+      return res.status(400).json({
+        message: `Tổng giá đơn hàng sau khi áp dụng voucher và điểm tích lũy phải tối thiểu 20,000₫ (hiện tại: ${finalAmount.toLocaleString()}₫).`,
+      });
+    }
+
     return res.status(200).json({
       message: `Mã voucher hợp lệ! Giảm ${userVoucher.Voucher.DiscountValue}${
         userVoucher.Voucher.DiscountValue <= 100 ? "%" : " VND"
       }.`,
       discount: userVoucher.Voucher.DiscountValue,
       isPercentage: userVoucher.Voucher.DiscountValue <= 100,
+      finalAmount: finalAmount,
     });
   } catch (error) {
     console.error("Lỗi trong applyVoucher:", error.message, error.stack);
@@ -229,7 +258,6 @@ export const applyVoucher = async (req, res) => {
   }
 };
 
-// Lấy tất cả voucher đã đổi (bao gồm active, used, expired)
 export const getRedeemedVouchers = async (req, res) => {
   try {
     const { UserID } = req.user;
@@ -240,14 +268,19 @@ export const getRedeemedVouchers = async (req, res) => {
         {
           model: Vouchers,
           as: "Voucher",
-          attributes: ["VoucherID", "Name", "DiscountValue", "PointsRequired"],
+          attributes: [
+            "VoucherID",
+            "Name",
+            "DiscountValue",
+            "PointsRequired",
+            "MinOrderValue",
+          ],
         },
       ],
     });
 
     const currentDate = new Date();
     const vouchers = redeemedVouchers.map((uv) => {
-      // Kiểm tra và cập nhật trạng thái nếu cần
       let status = uv.Status;
       if (status === "active" && new Date(uv.ExpiryDate) < currentDate) {
         uv.update({ Status: "expired" });
@@ -265,6 +298,7 @@ export const getRedeemedVouchers = async (req, res) => {
         isPercentage: uv.Voucher.DiscountValue <= 100,
         expiryDate: uv.ExpiryDate.toISOString(),
         pointsRequired: uv.Voucher.PointsRequired,
+        minOrderValue: uv.Voucher.MinOrderValue,
         status: status,
       };
     });
