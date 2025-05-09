@@ -40,19 +40,25 @@ export const getAvailableVouchers = async (req, res) => {
       return acc;
     }, {});
 
-    return res.status(200).json({
-      message: "Danh sách voucher có sẵn",
-      vouchers: vouchers.map((v) => ({
+    const mappedVouchers = vouchers.map((v) => {
+      console.log("Voucher ID:", v.VoucherID); // Debug VoucherID
+      return {
         id: v.VoucherID,
         name: v.Name,
         discount: v.DiscountValue,
         pointsRequired: v.PointsRequired,
+        usageLimit: v.UsageLimit,
         redemptionLimit: v.RedemptionLimit,
         expiryDays: v.ExpiryDays,
         minOrderValue: v.MinOrderValue,
         redemptionsRemaining:
           v.RedemptionLimit - (redemptionCounts[v.VoucherID] || 0),
-      })),
+      };
+    });
+
+    return res.status(200).json({
+      message: "Danh sách voucher có sẵn",
+      vouchers: mappedVouchers,
     });
   } catch (error) {
     console.error(
@@ -308,5 +314,100 @@ export const getRedeemedVouchers = async (req, res) => {
     res
       .status(500)
       .json({ message: `Lỗi khi lấy voucher đã đổi: ${error.message}` });
+  }
+};
+
+// Hàm thêm voucher mới
+export const addVoucher = async (req, res) => {
+  try {
+    const {
+      Name,
+      DiscountValue,
+      PointsRequired,
+      UsageLimit,
+      RedemptionLimit,
+      ExpiryDays,
+      MinOrderValue,
+    } = req.body;
+
+    if (
+      !Name ||
+      DiscountValue == null ||
+      PointsRequired == null ||
+      UsageLimit == null ||
+      RedemptionLimit == null ||
+      ExpiryDays == null ||
+      MinOrderValue == null
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Vui lòng cung cấp đầy đủ thông tin voucher." });
+    }
+
+    const newVoucher = await Vouchers.create({
+      Name,
+      DiscountValue,
+      PointsRequired,
+      UsageLimit,
+      RedemptionLimit,
+      ExpiryDays,
+      MinOrderValue,
+    });
+
+    return res
+      .status(201)
+      .json({ message: "Thêm voucher thành công.", voucher: newVoucher });
+  } catch (error) {
+    console.error("Lỗi trong addVoucher:", error.message, error.stack);
+    return res.status(500).json({ message: "Lỗi server." });
+  }
+};
+
+// Hàm sửa voucher
+export const editVoucher = async (req, res) => {
+  try {
+    const { VoucherID } = req.params;
+    const updates = req.body;
+
+    if (!VoucherID) {
+      return res.status(400).json({ message: "Vui lòng cung cấp VoucherID." });
+    }
+
+    const voucher = await Vouchers.findByPk(VoucherID);
+    if (!voucher) {
+      return res.status(404).json({ message: "Voucher không tồn tại." });
+    }
+
+    await voucher.update(updates);
+
+    return res
+      .status(200)
+      .json({ message: "Cập nhật voucher thành công.", voucher });
+  } catch (error) {
+    console.error("Lỗi trong editVoucher:", error.message, error.stack);
+    return res.status(500).json({ message: "Lỗi server." });
+  }
+};
+
+// Hàm xóa voucher
+export const deleteVoucher = async (req, res) => {
+  try {
+    const { VoucherID } = req.params;
+
+    if (!VoucherID) {
+      return res.status(400).json({ message: "Vui lòng cung cấp VoucherID." });
+    }
+
+    const voucher = await Vouchers.findByPk(VoucherID);
+    if (!voucher) {
+      return res.status(404).json({ message: "Voucher không tồn tại." });
+    }
+
+    await voucher.destroy();
+
+    return res.status(200).json({ message: "Xóa voucher thành công." });
+  } catch (error) {
+    console.error("Lỗi trong deleteVoucher:", error.message, error.stack);
+    return res.status(500).json({ message: "Lỗi server." });
   }
 };

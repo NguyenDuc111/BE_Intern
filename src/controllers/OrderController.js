@@ -298,7 +298,7 @@ export const processPayment = async (req, res) => {
 
       // Update order status to Paid
       await order.update(
-        { Status: "Paid", updatedAt: new Date() },
+        { Status: "Processing", updatedAt: new Date() },
         { transaction }
       );
 
@@ -455,9 +455,10 @@ export const vnpayCallback = async (req, res) => {
 // Lấy danh sách đơn hàng
 export const getAllOrders = async (req, res) => {
   try {
-    const { UserID, isAdmin } = req.user;
+    const { UserID, RoleName } = req.user;
     const where = {};
-    if (!isAdmin) {
+
+    if (RoleName !== "admin") {
       where.UserID = UserID;
     }
 

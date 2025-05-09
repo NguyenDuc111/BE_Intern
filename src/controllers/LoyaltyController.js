@@ -118,7 +118,7 @@ export const getUserPointsByAdmin = async (req, res) => {
     const points = await LoyaltyPoints.findAll({
       where: { UserID: userId },
       attributes: ["PointID", "Points", "Description"],
-      order: [[ "DESC"]],
+      order: [["PointID", "DESC"]],
       include: [
         {
           model: Users,

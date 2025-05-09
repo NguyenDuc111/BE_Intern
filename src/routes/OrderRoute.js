@@ -13,18 +13,24 @@ import { isAuthenticated, isAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
+/*--------------------User----------------- */
 //endpoint tạo đơn hàng
 router.post("/order-add", isAuthenticated, createOrder);
 //endpoint lấy danh sách đơn hàng
 router.get("/order", isAuthenticated, getAllOrders);
 //endpoint xem chi tiết đơn hàng
 router.get("/order/:id", isAuthenticated, getOrderById);
+
+/*--------------------Admin----------------- */
 //endpoint cập nhật đơn hàng
 router.put("/order-update/:id", isAuthenticated, isAdmin, updateOrder);
-//endpoint xóa đơn hàng (admin)
+//endpoint xóa đơn hàng
 router.delete("/order-del/:id", isAuthenticated, isAdmin, deleteOrder);
 //endpoint đơn hàng thành công
 router.post("/order/:id/complete", isAuthenticated, isAdmin, completeOrder);
+
+
+/*--------------------Payment---------------*/
 // Xử lý thanh toán
 router.post("/payment", isAuthenticated, processPayment);
 // Callback từ VNPay
