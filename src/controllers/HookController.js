@@ -1,256 +1,167 @@
 import sequelize from "../config/db.js";
 import initModels from "../models/init-models.js";
-import { Op } from 'sequelize';
+import { Op } from "sequelize";
 
 // Initialize models
 const models = initModels(sequelize);
-const { Products, Orders, ProductCategories, Categories, Promotion } = models;
+const {
+  Products,
+  Orders,
+  ProductCategories,
+  Categories,
+  Promotions,
+  Notification,
+} = models;
 
 export const handleWebhook = async (req, res) => {
-  console.log("Webhook request received:", JSON.stringify(req.body, null, 2));
-
-  // Validate query text
   const queryText = req.body.queryResult?.queryText;
   if (!queryText) {
-    console.error("No queryText provided in request");
     return res.status(400).json({
       fulfillmentText: "Yêu cầu không hợp lệ. Vui lòng cung cấp queryText.",
     });
   }
 
-  console.log("User query:", queryText);
-
   try {
     switch (queryText) {
-      case "product_safety":
+      case "product_info":
         return res.json({
           fulfillmentText:
-            "Sản phẩm Cholimex được sản xuất tại nhà máy đạt chuẩn ISO 22000 và HACCP, sử dụng nguyên liệu tự nhiên, an toàn và được kiểm định chất lượng bởi các cơ quan chức năng.",
+            "Sản phẩm Cholimex bao gồm các loại tương ớt, gia vị, và thực phẩm đóng gói, được sản xuất từ nguyên liệu tự nhiên, đạt chuẩn an toàn thực phẩm.",
         });
 
       case "product_ingredients":
         const productsIngredients = await Products.findAll({
           limit: 3,
-          attributes: ["ProductName", "Ingredients", "imageUrl"],
-          order: [[ "DESC"]],
+          attributes: ["ProductName", "Ingredients", "ImageURL"],
         });
         if (!productsIngredients || productsIngredients.length === 0) {
-          console.log("No products found for ingredients");
           return res.json({
             fulfillmentText:
               "Hiện tại chưa có thông tin thành phần sản phẩm. Vui lòng kiểm tra chi tiết trên bao bì hoặc liên hệ hỗ trợ.",
           });
         }
         return res.json({
-          fulfillmentText: "Dưới đây là thành phần của một số sản phẩm:",
+          fulfillmentText:
+            "Dưới đây là thành phần của một số sản phẩm Cholimex:",
           products: productsIngredients.map((p) => ({
             ProductName: p.ProductName,
             Ingredients: p.Ingredients || "Chưa cập nhật thành phần",
-            imageUrl: p.imageUrl || "https://example.com/placeholder.jpg",
+            imageUrl: p.ImageURL || "https://example.com/placeholder.jpg",
           })),
         });
 
-      case "product_certification":
+      case "product_quality":
         return res.json({
           fulfillmentText:
-            "Tất cả sản phẩm Cholimex đều đạt chứng nhận ISO 22000, HACCP và được cấp phép bởi Bộ Y tế Việt Nam, đảm bảo an toàn thực phẩm.",
+            "Sản phẩm Cholimex đạt chứng nhận ISO 22000 và HACCP, được kiểm định bởi Bộ Y tế Việt Nam, đảm bảo chất lượng và an toàn.",
         });
 
-      case "product_price":
-        const productsPricing = await Products.findAll({
-          limit: 3,
-          attributes: ["ProductName", "Price", "imageUrl"],
-          order: [[ "DESC"]],
-        });
-        if (!productsPricing || productsPricing.length === 0) {
-          console.log("No products found for pricing");
-          return res.json({
-            fulfillmentText:
-              "Hiện tại chưa có thông tin giá sản phẩm. Vui lòng xem chi tiết trên trang sản phẩm.",
-          });
-        }
-        return res.json({
-          fulfillmentText: "Dưới đây là giá của một số sản phẩm:",
-          products: productsPricing.map((p) => ({
-            ProductName: p.ProductName,
-            Price: p.Price || 0,
-            imageUrl: p.imageUrl || "https://example.com/placeholder.jpg",
-          })),
-        });
-
-      case "max_discount_percentage":
-        const maxDiscountPromo = await Promotion.findOne({
-          where: {
-            StartDate: { [Op.lte]: new Date() },
-            EndDate: { [Op.gte]: new Date() },
-          },
-          order: [["DiscountPercentage", "DESC"]],
-        });
-        if (!maxDiscountPromo) {
-          console.log("No active promotions found for max discount");
-          return res.json({
-            fulfillmentText:
-              "Hiện tại không có chương trình giảm giá nào. Vui lòng kiểm tra lại sau.",
-          });
-        }
-        return res.json({
-          fulfillmentText: `Giảm giá tối đa hiện tại là ${
-            maxDiscountPromo.DiscountPercentage
-          }% cho mã "${maxDiscountPromo.Code}" (đến ${new Date(
-            maxDiscountPromo.EndDate
-          ).toLocaleDateString("vi-VN")}).`,
-        });
-
-      case "max_discount_amount":
+      case "order_process":
         return res.json({
           fulfillmentText:
-            "Mức giảm giá tối đa bằng tiền phụ thuộc vào tổng hóa đơn. Ví dụ, với chương trình giảm 10% cho hóa đơn từ 500,000 VND, bạn có thể tiết kiệm tối đa 50,000 VND. Vui lòng xem chi tiết trên trang khuyến mãi.",
+            "Để đặt hàng, bạn chọn sản phẩm, thêm vào giỏ hàng, nhập thông tin giao hàng và thanh toán qua website. Đơn hàng sẽ được xác nhận qua email.",
         });
 
-      case "special_offers":
-        const specialPromo = await Promotion.findOne({
-          where: {
-            StartDate: { [Op.lte]: new Date() },
-            EndDate: { [Op.gte]: new Date() },
-          },
-          order: sequelize.random(), 
-        });
-        if (!specialPromo) {
-          console.log("No special offers found");
-          return res.json({
-            fulfillmentText:
-              "Hiện tại không có ưu đãi đặc biệt nào. Vui lòng kiểm tra lại sau hoặc liên hệ hỗ trợ qua hotline 1800-123-456.",
-          });
-        }
-        return res.json({
-          fulfillmentText: `Ưu đãi đặc biệt hiện tại: Mã "${
-            specialPromo.Code
-          }", giảm ${specialPromo.DiscountPercentage}% đến ${new Date(
-            specialPromo.EndDate
-          ).toLocaleDateString("vi-VN")}.`,
-        });
-
-      case "promo_points":
-        const activePromos = await Promotion.findAll({
-          where: {
-            StartDate: { [Op.lte]: new Date() },
-            EndDate: { [Op.gte]: new Date() },
-          },
-          limit: 3,
-          order: [["StartDate", "DESC"]],
-        });
-        const promoText =
-          activePromos.length > 0
-            ? `Hiện tại có các mã khuyến mãi: ${activePromos
-                .map((p) => `${p.Code} (giảm ${p.DiscountPercentage}%)`)
-                .join(", ")}. `
-            : "Hiện tại không có mã khuyến mãi nào. ";
-        return res.json({
-          fulfillmentText: `${promoText}Về điểm tích lũy, bạn nhận 1 điểm cho mỗi 100,000 VND mua sắm. Điểm có thể đổi thành voucher giảm giá (ví dụ: 10 điểm = 50,000 VND) trong mục 'Tài khoản' trên website.`,
-        });
-
-      case "active_promo_codes":
-        const activePromoCodes = await Promotion.findAll({
-          where: {
-            StartDate: { [Op.lte]: new Date() },
-            EndDate: { [Op.gte]: new Date() },
-          },
-          limit: 3,
-          order: [["StartDate", "DESC"]],
-        });
-        if (!activePromoCodes || activePromoCodes.length === 0) {
-          console.log("No active promo codes found");
-          return res.json({
-            fulfillmentText:
-              "Hiện tại không có mã khuyến mãi nào. Vui lòng kiểm tra lại sau hoặc xem trên trang khuyến mãi.",
-          });
-        }
-        const promoCodeList = activePromoCodes
-          .map(
-            (p) =>
-              `${p.Code}: Giảm ${p.DiscountPercentage}% đến ${new Date(
-                p.EndDate
-              ).toLocaleDateString("vi-VN")}`
-          )
-          .join("; ");
-        return res.json({
-          fulfillmentText: `Mã khuyến mãi hiện tại: ${promoCodeList}.`,
-        });
-
-      case "points_usage":
+      case "add_to_cart":
         return res.json({
           fulfillmentText:
-            "Bạn tích lũy 1 điểm cho mỗi 100,000 VND mua sắm. Điểm có thể đổi thành voucher giảm giá (ví dụ: 10 điểm = 50,000 VND) trong mục 'Tài khoản' trên website. Vui lòng đăng nhập để kiểm tra điểm.",
+            "Trên trang sản phẩm, nhấp vào nút 'Thêm vào giỏ hàng'. Bạn có thể điều chỉnh số lượng trong giỏ hàng trước khi thanh toán.",
         });
 
-      case "delivery":
+      case "checkout_steps":
         return res.json({
           fulfillmentText:
-            "Thời gian giao hàng của Cholimex thường từ 2-5 ngày làm việc, tùy khu vực. Đơn hàng nội thành TP.HCM có thể giao trong 1-2 ngày.",
+            "1. Xem giỏ hàng và kiểm tra sản phẩm. 2. Nhập địa chỉ giao hàng. 3. Chọn phương thức thanh toán (VNPay hoặc COD). 4. Xác nhận đơn hàng.",
+        });
+
+      case "payment_options":
+        return res.json({
+          fulfillmentText:
+            "Cholimex hỗ trợ thanh toán qua VNPay (thẻ ngân hàng, ví điện tử) và thanh toán khi nhận hàng (COD).",
+        });
+
+      case "vnpay_payment":
+        return res.json({
+          fulfillmentText:
+            "Thanh toán qua VNPay rất an toàn, sử dụng mã hóa SSL. Bạn sẽ được chuyển hướng đến cổng thanh toán VNPay để hoàn tất.",
+        });
+
+      case "cod_payment":
+        return res.json({
+          fulfillmentText:
+            "Có, Cholimex hỗ trợ thanh toán khi nhận hàng (COD). Bạn chỉ cần trả tiền cho nhân viên giao hàng khi nhận sản phẩm.",
+        });
+
+      case "delivery_info":
+        return res.json({
+          fulfillmentText:
+            "Giao hàng từ 2-5 ngày làm việc, tùy khu vực. Phí giao hàng từ 20,000-50,000 VND, miễn phí cho đơn từ 500,000 VND.",
+        });
+
+      case "delivery_time":
+        return res.json({
+          fulfillmentText:
+            "Thời gian giao hàng nội thành TP.HCM là 1-2 ngày, các khu vực khác từ 3-5 ngày làm việc.",
         });
 
       case "delivery_fees":
         return res.json({
           fulfillmentText:
-            "Phí giao hàng từ 20,000 đến 50,000 VND, tùy khu vực. Miễn phí giao hàng cho đơn từ 500,000 VND trở lên.",
+            "Phí giao hàng từ 20,000-50,000 VND, tùy khu vực. Miễn phí giao hàng cho đơn hàng từ 500,000 VND trở lên.",
         });
 
-      case "delivery_tracking":
-        const sampleOrder = await Orders.findOne({
-          order: [[ "DESC"]],
-        });
-        if (!sampleOrder) {
-          console.log("No orders found for tracking example");
-          return res.json({
-            fulfillmentText:
-              "Bạn có thể theo dõi đơn hàng trong mục 'Lịch sử thanh toán' trên website hoặc liên hệ hỗ trợ để được cung cấp mã theo dõi.",
+      case "voucher_points":
+        let promoText = "Hiện tại không có mã khuyến mãi nào. ";
+        try {
+          const activePromos = await Promotions.findAll({
+            where: {
+              StartDate: { [Op.lte]: new Date() },
+              EndDate: { [Op.gte]: new Date() },
+            },
+            limit: 3,
+            attributes: ["Code", "DiscountPercentage"],
           });
+
+          if (activePromos && activePromos.length > 0) {
+            promoText = `Hiện có các mã khuyến mãi: ${activePromos
+              .map((p) => `${p.Code} (giảm ${p.DiscountPercentage}%)`)
+              .join(", ")}. `;
+          }
+        } catch (promoError) {
+          console.error(
+            "Error fetching promotions:",
+            promoError.message,
+            promoError.stack
+          );
+          promoText =
+            "Không thể lấy thông tin khuyến mãi. Vui lòng kiểm tra lại sau. ";
         }
+
         return res.json({
-          fulfillmentText: `Bạn có thể theo dõi đơn hàng trong mục 'Lịch sử thanh toán' trên website. Ví dụ: Đơn hàng #${sampleOrder.OrderID} hiện ở trạng thái ${sampleOrder.OrderStatus}.`,
+          fulfillmentText: `${promoText}Bạn nhận 1 điểm tích lũy cho mỗi 100,000 VND mua sắm. Điểm có thể đổi voucher trong mục 'Tài khoản'.`,
         });
 
-      case "storage":
+      case "redeem_voucher":
         return res.json({
           fulfillmentText:
-            "Sản phẩm Cholimex nên được bảo quản ở nơi khô ráo, thoáng mát, tránh ánh nắng trực tiếp để giữ chất lượng tốt nhất.",
+            "Đăng nhập vào tài khoản, vào mục 'Điểm tích lũy', chọn voucher muốn đổi và xác nhận. Mã voucher sẽ được gửi qua email.",
         });
 
-      case "shelf_life":
-        const productsShelfLife = await Products.findAll({
-          limit: 3,
-          attributes: ["ProductName"],
-          order: [[ "DESC"]],
-        });
-        if (!productsShelfLife || productsShelfLife.length === 0) {
-          console.log("No products found for shelf life");
-          return res.json({
-            fulfillmentText:
-              "Hạn sử dụng của sản phẩm Cholimex thường từ 12-24 tháng. Vui lòng kiểm tra ngày hết hạn trên bao bì.",
-          });
-        }
-        const shelfLifeList = productsShelfLife
-          .map((p) => `${p.ProductName}: Thường 12-24 tháng từ ngày sản xuất`)
-          .join("; ");
-        return res.json({
-          fulfillmentText: `Hạn sử dụng của một số sản phẩm: ${shelfLifeList}. Kiểm tra ngày hết hạn trên bao bì.`,
-        });
-
-      case "storage_instructions":
+      case "apply_voucher":
         return res.json({
           fulfillmentText:
-            "Bảo quản sản phẩm ở nhiệt độ phòng, đậy kín nắp sau khi mở. Nên sử dụng trong vòng 1-2 tháng sau khi mở để đảm bảo chất lượng.",
+            "Trong trang thanh toán, nhập mã voucher vào ô 'Mã giảm giá' và nhấn 'Áp dụng'. Hệ thống sẽ kiểm tra và giảm giá nếu hợp lệ.",
         });
 
       case "customer_support":
         return res.json({
           fulfillmentText:
-            "Bạn có thể liên hệ bộ phận hỗ trợ khách hàng của Cholimex qua email, hotline hoặc chatbot trên website để được hỗ trợ nhanh chóng.",
+            "Liên hệ qua hotline, email hoặc chatbot trên website. Đội ngũ hỗ trợ sẽ phản hồi nhanh chóng trong giờ làm việc.",
         });
 
       case "support_contact":
         return res.json({
-          fulfillmentText: `Email hỗ trợ: ${
+          fulfillmentText: `Email: ${
             process.env.EMAIL_USER || "support@cholimex.vn"
           }. Hotline: 1800-123-456 (miễn phí).`,
         });
@@ -258,25 +169,25 @@ export const handleWebhook = async (req, res) => {
       case "support_hours":
         return res.json({
           fulfillmentText:
-            "Hỗ trợ khách hàng hoạt động từ 8:00 đến 17:00, thứ Hai đến thứ Bảy, trừ ngày lễ.",
+            "Hỗ trợ từ 8:00 đến 17:00, thứ Hai đến thứ Bảy, trừ ngày lễ.",
         });
 
       case "return_policy":
         return res.json({
           fulfillmentText:
-            "Cholimex hỗ trợ đổi trả sản phẩm trong vòng 7 ngày kể từ ngày nhận hàng nếu sản phẩm lỗi, hư hỏng hoặc không đúng mô tả.",
+            "Cholimex hỗ trợ đổi trả trong 7 ngày nếu sản phẩm lỗi, hư hỏng hoặc không đúng mô tả. Liên hệ hỗ trợ để được hướng dẫn.",
         });
 
       case "return_conditions":
         return res.json({
           fulfillmentText:
-            "Sản phẩm đổi trả phải còn nguyên vẹn, chưa sử dụng, có bao bì gốc và kèm hóa đơn. Không áp dụng cho sản phẩm đã mở nắp hoặc sử dụng.",
+            "Sản phẩm phải còn nguyên vẹn, chưa sử dụng, có bao bì gốc và kèm hóa đơn. Không áp dụng cho sản phẩm đã mở nắp.",
         });
 
       case "return_process":
         return res.json({
           fulfillmentText:
-            "Để đổi trả, vui lòng liên hệ hỗ trợ qua hotline hoặc email, cung cấp mã đơn hàng và mô tả lý do. Chúng tôi sẽ hướng dẫn quy trình chi tiết.",
+            "Liên hệ qua hotline hoặc email, cung cấp mã đơn hàng và lý do đổi trả. Cholimex sẽ hướng dẫn quy trình chi tiết.",
         });
 
       default:

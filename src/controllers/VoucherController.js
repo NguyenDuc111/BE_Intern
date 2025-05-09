@@ -41,7 +41,7 @@ export const getAvailableVouchers = async (req, res) => {
     }, {});
 
     const mappedVouchers = vouchers.map((v) => {
-      console.log("Voucher ID:", v.VoucherID); // Debug VoucherID
+      
       return {
         id: v.VoucherID,
         name: v.Name,

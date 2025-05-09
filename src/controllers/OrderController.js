@@ -16,6 +16,7 @@ const {
   TempOrderItems,
   UserVouchers,
   Vouchers,
+  Notification,
 } = models;
 
 // Tạo đơn hàng mới
@@ -233,7 +234,7 @@ export const processPayment = async (req, res) => {
     }
 
     if (paymentMethod === "cod") {
-      // For COD, set status to Paid and update voucher
+      // For COD, set status to Processing and update voucher
       const tempItems = await TempOrderItems.findAll({
         where: { OrderID: order.OrderID },
         transaction,
@@ -296,13 +297,27 @@ export const processPayment = async (req, res) => {
         }
       }
 
-      // Update order status to Paid
+      // Update order status to Processing
       await order.update(
         { Status: "Processing", updatedAt: new Date() },
         { transaction }
       );
 
+      // Create notification for COD order (Processing)
+      await Notification.create(
+        {
+          UserID,
+          Title: `Đơn hàng #${order.OrderID} đang được xử lý`,
+          Message: `Đơn hàng #${order.OrderID} của bạn đã được đặt thành công và đang chờ xử lý. Chúng tôi sẽ thông báo khi đơn hàng hoàn tất.`,
+          IsRead: false,
+        },
+        { transaction }
+      );
+
       await transaction.commit();
+      console.log(
+        `COD order ${order.OrderID} committed successfully with OrderDetails`
+      );
       return res.status(200).json({
         message: "Đặt hàng COD thành công.",
         order,
@@ -335,6 +350,7 @@ export const processPayment = async (req, res) => {
     }
   } catch (error) {
     await transaction.rollback();
+    console.error("Lỗi khi xử lý thanh toán:", error);
     res
       .status(500)
       .json({ error: `Lỗi khi xử lý thanh toán: ${error.message}` });
@@ -422,6 +438,17 @@ export const vnpayCallback = async (req, res) => {
         { transaction }
       );
 
+      // Create notification for successful VNPay payment
+      await Notification.create(
+        {
+          UserID: order.UserID,
+          Title: `Đơn hàng #${order.OrderID} đã thanh toán thành công`,
+          Message: `Đơn hàng #${order.OrderID} của bạn đã thanh toán thành công qua VNPay. Cảm ơn bạn đã mua sắm tại Cholimex!`,
+          IsRead: false,
+        },
+        { transaction }
+      );
+
       await transaction.commit();
       return res.redirect(
         `http://localhost:5173/payment/success?orderId=${orderId}&status=success`
@@ -493,7 +520,7 @@ export const getAllOrders = async (req, res) => {
 export const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
-    const { UserID, isAdmin } = req.user;
+    const { UserID, RoleName } = req.user;
 
     const order = await Orders.findByPk(id, {
       include: [
@@ -517,7 +544,8 @@ export const getOrderById = async (req, res) => {
       return res.status(404).json({ error: "Không tìm thấy đơn hàng." });
     }
 
-    if (!isAdmin && order.UserID !== UserID) {
+    // Allow admins to view any order; non-admins can only view their own
+    if (RoleName !== "admin" && order.UserID !== UserID) {
       return res
         .status(403)
         .json({ error: "Không có quyền truy cập vào đơn hàng." });
@@ -685,6 +713,17 @@ export const completeOrder = async (req, res) => {
         { transaction }
       );
     }
+
+    // Create notification for COD order (Paid)
+    await Notification.create(
+      {
+        UserID: order.UserID,
+        Title: `Đơn hàng #${order.OrderID} đã thanh toán thành công`,
+        Message: `Đơn hàng #${order.OrderID} của bạn đã thanh toán thành công. Cảm ơn bạn đã mua sắm tại Cholimex!`,
+        IsRead: false,
+      },
+      { transaction }
+    );
 
     await transaction.commit();
     res.status(200).json({

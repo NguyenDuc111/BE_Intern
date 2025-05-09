@@ -57,7 +57,7 @@ export const addProduct = async (req, res) => {
         Price,
         StockQuantity,
         Ingredients,
-        ImageURL
+        ImageURL,
       },
       { transaction }
     );
@@ -68,9 +68,9 @@ export const addProduct = async (req, res) => {
     // Tạo thông báo cho tất cả người dùng
     await Notification.create(
       {
-        UserID: null, // Thông báo chung
-        Title: "Sản phẩm mới tại Cholimex!",
-        Message: `Sản phẩm mới: ${ProductName} đã có mặt tại Cholimex!`,
+        UserID: null, // null means for all users
+        Title: `Sản phẩm mới: ${ProductName}`,
+        Message: `Sản phẩm ${ProductName} vừa được ra mắt! Hãy khám phá ngay tại Cholimex.`,
         IsRead: false,
       },
       { transaction }
@@ -135,7 +135,6 @@ export const getProductById = async (req, res) => {
         "StockQuantity",
         "ImageURL",
         "Ingredients",
-        
       ],
     });
     if (!product) {
@@ -205,7 +204,8 @@ export const updateProduct = async (req, res) => {
         StockQuantity:
           StockQuantity !== undefined ? StockQuantity : product.StockQuantity,
         ImageURL: ImageURL !== undefined ? ImageURL : product.ImageURL,
-        Ingredients: Ingredients !== undefined ? Ingredients : product.Ingredients,
+        Ingredients:
+          Ingredients !== undefined ? Ingredients : product.Ingredients,
       },
       { transaction }
     );
