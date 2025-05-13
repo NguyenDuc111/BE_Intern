@@ -20,7 +20,6 @@ import HookRoute from "./routes/HookRoute.js";
 import VoucherRoute from "./routes/VoucherRoute.js";
 const app = express();
 
-
 app.use(express.json());
 
 // Khởi tạo models
@@ -47,4 +46,4 @@ app.use(StatisticsRoute);
 app.use(HookRoute);
 app.use(VoucherRoute);
 
-app.listen(8080);
+app.listen(8081);
