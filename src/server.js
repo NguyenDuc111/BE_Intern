@@ -31,19 +31,19 @@ app.use(express.json());
 app.use(errorHandler);
 
 //routes
-app.use('/api' +AuthRoute);
-app.use('/api' +cartRoute);
-app.use('/api' +CategoryRoute);
-app.use('/api' +NotificationRoute);
-app.use('/api' +OrderRoute);
-app.use('/api' +productRoute);
-app.use('/api' +PromotionRoute);
-app.use('/api' +ReviewRoute);
-app.use('/api' +UserRoute);
-app.use('/api' +WishlistRoute);
-app.use('/api' +LoyaltyRoute);
-app.use('/api' +StatisticsRoute);
-app.use('/api' +HookRoute);
-app.use('/api' +VoucherRoute);
+app.use(AuthRoute);
+app.use(cartRoute);
+app.use(CategoryRoute);
+app.use(NotificationRoute);
+app.use(OrderRoute);
+app.use(productRoute);
+app.use(PromotionRoute);
+app.use(ReviewRoute);
+app.use(UserRoute);
+app.use(WishlistRoute);
+app.use(LoyaltyRoute);
+app.use(StatisticsRoute);
+app.use(HookRoute);
+app.use(VoucherRoute);
 
-app.listen(8081);
+app.listen(8080);
