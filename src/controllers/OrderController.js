@@ -324,7 +324,7 @@ export const processPayment = async (req, res) => {
       });
     } else if (paymentMethod === "vnpay") {
       const orderInfo = `Thanh toán đơn hàng #${order.OrderID}`;
-      const returnUrl = "http://localhost:8080/vnpay/callback";
+      const returnUrl = "http://192.168.100.133:8080/vnpay/callback";
       const paymentUrl = await createOrderService(
         req,
         parseInt(order.TotalAmount),

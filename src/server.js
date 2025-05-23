@@ -18,32 +18,39 @@ import sequelize from "../src/config/db.js";
 import initModels from "../src/models/init-models.js";
 import HookRoute from "./routes/HookRoute.js";
 import VoucherRoute from "./routes/VoucherRoute.js";
-const app = express();
 
-app.use(express.json());
+dotenv.config();
+const app = express();
+const PORT = process.env.PORT || 8080;
 
 // Khởi tạo models
 const models = initModels(sequelize);
-const { Products } = models;
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://tmdt1.cholimexfood.com.vn'],
+  credentials: true
+}));
 app.use(express.json());
+
+// Routes
+app.use("/api", AuthRoute);
+app.use("/api", cartRoute);
+app.use("/api", CategoryRoute);
+app.use("/api", NotificationRoute);
+app.use("/api", OrderRoute);
+app.use("/api", productRoute);
+app.use("/api", PromotionRoute);
+app.use("/api", ReviewRoute);
+app.use("/api", UserRoute);
+app.use("/api", WishlistRoute);
+app.use("/api", LoyaltyRoute);
+app.use("/api", StatisticsRoute);
+app.use("/api", HookRoute);
+app.use("/api", VoucherRoute);
+
+// Cuối cùng
 app.use(errorHandler);
 
-//routes
-app.use(AuthRoute);
-app.use(cartRoute);
-app.use(CategoryRoute);
-app.use(NotificationRoute);
-app.use(OrderRoute);
-app.use(productRoute);
-app.use(PromotionRoute);
-app.use(ReviewRoute);
-app.use(UserRoute);
-app.use(WishlistRoute);
-app.use(LoyaltyRoute);
-app.use(StatisticsRoute);
-app.use(HookRoute);
-app.use(VoucherRoute);
-
-app.listen(8080);
+app.listen(8080, () => {
+  console.log(`Server running on port 8080`);
+});
