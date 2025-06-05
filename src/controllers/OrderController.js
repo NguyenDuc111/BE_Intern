@@ -324,7 +324,7 @@ export const processPayment = async (req, res) => {
       });
     } else if (paymentMethod === "vnpay") {
       const orderInfo = `Thanh toán đơn hàng #${order.OrderID}`;
-      const returnUrl = "http://192.168.100.133:8080/vnpay/callback";
+      const returnUrl = "http://tmdt1.cholimexfood.com.vn/api/vnpay/callback";
       const paymentUrl = await createOrderService(
         req,
         parseInt(order.TotalAmount),
@@ -451,7 +451,7 @@ export const vnpayCallback = async (req, res) => {
 
       await transaction.commit();
       return res.redirect(
-        `http://localhost:5173/payment/success?orderId=${orderId}&status=success`
+        `http://tmdt1.cholimexfood.com.vn/api/payment/success?orderId=${orderId}&status=success`
       );
     } else {
       await order.update(
@@ -464,7 +464,7 @@ export const vnpayCallback = async (req, res) => {
       });
       await transaction.commit();
       return res.redirect(
-        `http://localhost:5173/payment/failed?orderId=${orderId}&status=failed&message=${encodeURIComponent(
+        `http://tmdt1.cholimexfood.com.vn/api/payment/failed?orderId=${orderId}&status=failed&message=${encodeURIComponent(
           result === -1 ? "Invalid signature" : "Giao dịch VNPay thất bại"
         )}`
       );
@@ -472,7 +472,7 @@ export const vnpayCallback = async (req, res) => {
   } catch (error) {
     await transaction.rollback();
     return res.redirect(
-      `http://localhost:5173/payment/failed?orderId=${
+      `http://tmdt1.cholimexfood.com.vn/api/payment/failed?orderId=${
         req.query.vnp_TxnRef || "unknown"
       }&status=error&message=${encodeURIComponent(error.message)}`
     );
