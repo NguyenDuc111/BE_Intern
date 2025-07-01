@@ -357,12 +357,16 @@ export const processPayment = async (req, res) => {
   }
 };
 
-// Xử lý callback từ VNPay
+// xử lý callback VNPay
 export const vnpayCallback = async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
     const result = await orderReturnService(req);
-    const orderId = req.query.vnp_TxnRef;
+
+    const fullTxnRef = req.query.vnp_TxnRef;
+    const orderId = fullTxnRef.includes("_")
+      ? fullTxnRef.split("_")[0]
+      : fullTxnRef;
 
     const order = await Orders.findByPk(orderId, { transaction });
     if (!order) {
@@ -380,16 +384,10 @@ export const vnpayCallback = async (req, res) => {
         const product = await Products.findByPk(item.ProductID, {
           transaction,
         });
-        if (!product) {
-          await transaction.rollback();
-          return res
-            .status(404)
-            .json({ error: `Không tìm thấy sản phẩm ${item.ProductID}.` });
-        }
-        if (product.StockQuantity < item.Quantity) {
+        if (!product || product.StockQuantity < item.Quantity) {
           await transaction.rollback();
           return res.status(400).json({
-            error: `Không đủ hàng tồn kho cho ${product.ProductName}. Số lượng có sẵn: ${product.StockQuantity}, Số lượng yêu cầu: ${item.Quantity}.`,
+            error: "Không đủ hàng hoặc không tìm thấy sản phẩm.",
           });
         }
 
@@ -404,7 +402,9 @@ export const vnpayCallback = async (req, res) => {
         );
 
         await product.update(
-          { StockQuantity: product.StockQuantity - item.Quantity },
+          {
+            StockQuantity: product.StockQuantity - item.Quantity,
+          },
           { transaction }
         );
       }
@@ -414,36 +414,16 @@ export const vnpayCallback = async (req, res) => {
         transaction,
       });
 
-      // Update voucher if used
-      if (order.VoucherCode) {
-        const userVoucher = await UserVouchers.findOne({
-          where: { UserID: order.UserID, Code: order.VoucherCode },
-          include: [{ model: Vouchers, as: "Voucher" }],
-          transaction,
-        });
-
-        if (userVoucher && userVoucher.Status === "active") {
-          await userVoucher.update(
-            { UsageCount: userVoucher.UsageCount + 1 },
-            { transaction }
-          );
-          if (userVoucher.UsageCount + 1 >= userVoucher.Voucher.UsageLimit) {
-            await userVoucher.update({ Status: "used" }, { transaction });
-          }
-        }
-      }
-
       await order.update(
         { Status: "Paid", updatedAt: new Date() },
         { transaction }
       );
 
-      // Create notification for successful VNPay payment
       await Notification.create(
         {
           UserID: order.UserID,
           Title: `Đơn hàng #${order.OrderID} đã thanh toán thành công`,
-          Message: `Đơn hàng #${order.OrderID} của bạn đã thanh toán thành công qua VNPay. Cảm ơn bạn đã mua sắm tại Cholimex!`,
+          Message: `Đơn hàng của bạn đã được thanh toán qua VNPay.`,
           IsRead: false,
         },
         { transaction }
@@ -451,7 +431,7 @@ export const vnpayCallback = async (req, res) => {
 
       await transaction.commit();
       return res.redirect(
-        `http://tmdt1.cholimexfood.com.vn/api/payment/success?orderId=${orderId}&status=success`
+        `http://tmdt1.cholimexfood.com.vn/payment/success?orderId=${orderId}&status=success`
       );
     } else {
       await order.update(
@@ -464,17 +444,20 @@ export const vnpayCallback = async (req, res) => {
       });
       await transaction.commit();
       return res.redirect(
-        `http://tmdt1.cholimexfood.com.vn/api/payment/failed?orderId=${orderId}&status=failed&message=${encodeURIComponent(
-          result === -1 ? "Invalid signature" : "Giao dịch VNPay thất bại"
+        `http://tmdt1.cholimexfood.com.vn/payment/failed?orderId=${orderId}&status=failed&message=${encodeURIComponent(
+          result === -1
+            ? "Chữ ký không hợp lệ (Invalid signature)"
+            : "Giao dịch VNPay thất bại"
         )}`
       );
     }
   } catch (error) {
     await transaction.rollback();
+    const fallbackOrderId = req.query.vnp_TxnRef?.split("_")[0] || "unknown";
     return res.redirect(
-      `http://tmdt1.cholimexfood.com.vn/api/payment/failed?orderId=${
-        req.query.vnp_TxnRef || "unknown"
-      }&status=error&message=${encodeURIComponent(error.message)}`
+      `http://tmdt1.cholimexfood.com.vn/payment/failed?orderId=${fallbackOrderId}&status=error&message=${encodeURIComponent(
+        error.message
+      )}`
     );
   }
 };

@@ -9,6 +9,8 @@ import {
 } from "../config/vnpayConfig.js";
 import { format } from "date-fns";
 
+process.env.TZ = 'Asia/Ho_Chi_Minh';
+
 export const createOrderService = (
   req,
   amount,
@@ -18,15 +20,15 @@ export const createOrderService = (
 ) => {
   const vnp_Version = "2.1.0";
   const vnp_Command = "pay";
-  const vnp_TxnRef = orderId;
+  const vnp_TxnRef = orderId.toString(); // chắc chắn là chuỗi
   const vnp_IpAddr = getIpAddress(req);
-  const orderType = "order-type";
+  const orderType = "other"; // có thể đặt thành 'other' nếu không xác định rõ loại
 
   const vnp_Params = {
     vnp_Version,
     vnp_Command,
     vnp_TmnCode,
-    vnp_Amount: (amount * 100).toString(),
+    vnp_Amount: (parseInt(amount) * 100).toString(), // integer * 100
     vnp_CurrCode: "VND",
     vnp_TxnRef,
     vnp_OrderInfo: orderInfo,
@@ -38,61 +40,58 @@ export const createOrderService = (
     vnp_ExpireDate: format(new Date(Date.now() + 15 * 60000), "yyyyMMddHHmmss"),
   };
 
-  // Sử dụng hashAllFields để tính chữ ký
-  const secureHash = hashAllFields(vnp_Params);
+  // Sắp xếp và ký như tài liệu
+  const sortedKeys = Object.keys(vnp_Params).sort();
+  let signData = "";
+  sortedKeys.forEach((key, index) => {
+    const value = vnp_Params[key];
+    if (index !== 0) signData += "&";
+    signData += `${key}=${encodeURIComponent(value).replace(/%20/g, "+")}`;
+  });
 
-  // Tạo chuỗi query cho URL
-  const sortedFields = Object.keys(vnp_Params).sort();
-  const queryString = sortedFields
+  const secureHash = hmacSHA512(vnp_HashSecret, signData);
+
+  const queryString = sortedKeys
     .map((key) => {
-      const value = vnp_Params[key];
-      const encodedValue = encodeURIComponent(value).replace(/%20/g, "+");
-      return `${key}=${encodedValue}`;
+      const value = encodeURIComponent(vnp_Params[key]).replace(/%20/g, "+");
+      return `${key}=${value}`;
     })
     .join("&");
 
-  // Debug chuỗi query và secureHash
   console.log("Query string for URL:", queryString);
   console.log("Calculated secureHash:", secureHash);
 
   return `${vnp_PayUrl}?${queryString}&vnp_SecureHash=${secureHash}`;
 };
 
+
 export const orderReturnService = (req) => {
-  // Lấy tham số query nguyên bản
+  // Lấy raw query từ VNPay
   const fields = { ...req.query };
 
-  console.log("VNPay callback raw query:", fields);
-
-  // Lưu vnp_SecureHash và loại bỏ các trường không cần thiết
   const vnp_SecureHash = fields.vnp_SecureHash;
   delete fields.vnp_SecureHash;
   delete fields.vnp_SecureHashType;
 
-  // Tạo chuỗi query để tính chữ ký
-  const sortedFields = Object.keys(fields).sort();
-  const queryString = sortedFields
+  const sortedKeys = Object.keys(fields).sort();
+  const queryString = sortedKeys
     .map((key) => {
-      let value = fields[key];
-      // Mã hóa giá trị theo chuẩn VNPay
+      let value = fields[key] ?? ""; // tránh undefined
       value = encodeURIComponent(value).replace(/%20/g, "+");
       return `${key}=${value}`;
     })
     .join("&");
 
-  console.log("Query string for signature:", queryString);
-
-  // Tính chữ ký
   const signValue = hmacSHA512(vnp_HashSecret, queryString);
-  console.log("Calculated signValue:", signValue);
-  console.log("Received vnp_SecureHash:", vnp_SecureHash);
+
+  console.log("✅ Callback query string:", queryString);
+  console.log("✅ VNPay secure hash:", vnp_SecureHash);
+  console.log("✅ Calculated hash:", signValue);
 
   if (signValue === vnp_SecureHash) {
-    const transactionStatus = req.query.vnp_TransactionStatus;
-    console.log("VNPay TransactionStatus:", transactionStatus);
-    return transactionStatus === "00" ? 1 : 0;
+    return req.query.vnp_TransactionStatus === "00" ? 1 : 0;
   } else {
-    console.log("Invalid signature");
+    console.warn("❌ Invalid VNPay signature");
     return -1;
   }
 };
